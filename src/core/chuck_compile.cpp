@@ -45,6 +45,7 @@
 
 #include "ulib_machine.h"
 #include "ulib_ai.h"
+#include "ulib_chugl.h"
 #include "ulib_math.h"
 #include "ulib_std.h"
 
@@ -724,6 +725,11 @@ t_CKBOOL load_internal_modules( Chuck_Compiler * compiler )
     EM_log( CK_LOG_SEVERE, "module 'SerialIO'" );
     if( !init_class_serialio( env ) ) goto error;
     #endif
+
+
+    // TODO azaday add some kind of command line flags to enable/disable graphics module?
+    EM_log( CK_LOG_SEVERE, "module 'ChuGL'" );
+    if ( !load_module( compiler, env, chugl_query, "ChuGL", "global" ) ) goto error;
 
     // EM_log( CK_LOG_SEVERE, "module 'CKDoc'" );
     // if( !load_module( compiler, env, ckdoc_query, "CKDoc", "global" ) ) goto error;

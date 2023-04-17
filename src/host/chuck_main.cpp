@@ -36,6 +36,14 @@
 #include "chuck_console.h"
 #include "util_string.h"
 #include <signal.h>
+#include <thread>
+#include <mutex>
+
+#if defined(__APPLE__)
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
+#endif
 
 #if defined(__PLATFORM_WIN32__)
   #include <windows.h>
@@ -43,6 +51,145 @@
   #include <unistd.h>
   #include <pthread.h>
 #endif
+
+//-----------------------------------------------------------------------------
+// everybody wants graphics
+//-----------------------------------------------------------------------------
+#include "ulib_chugl.h"
+#include <iostream>
+#define NENDS 2           /* num points to draw */
+GLdouble width, height;   /* window width and height */
+int wd;                   /* GLUT window handle */
+int points[NENDS][2];       /* array of 2D points */
+int display_counter = 0;
+
+void idle(void) {
+    glutPostRedisplay();
+}
+
+/* Draw the window - this is where all the GL actions are */
+void display(void) {
+    int i;
+
+    /* clear the screen to white */
+    // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    // glClear(GL_COLOR_BUFFER_BIT);
+
+    // display_counter++;
+    // std::cerr << display_counter << std::endl;
+
+    // if ((display_counter / 60) % 2 == 0)
+    //     glColor3f(0.0, 1.0, 0.0);
+    // else
+    //     glColor3f(0.0, 0.0, 1.0);
+
+    /* draw a black line */
+    glBegin(GL_LINES);
+        for (i = 0; i < NENDS; ++i) {
+        glVertex2iv((GLint *) points[i]);
+        }
+    glEnd();
+
+    /* flush the queue, draw the goods */
+    // EM_log( CK_LOG_SYSTEM, "flushing draw queue..." );
+    ChuGL::flushCommandQueue();
+
+    glFlush();
+
+    glutSwapBuffers();
+
+    return;
+}
+
+void kbd(unsigned char key, int x, int y) {
+    switch((char)key) {
+    case 'q':
+    case 27:    /* ESC */
+        glutDestroyWindow(wd);
+        exit(0);
+    default:
+        break;
+    }
+
+    return;
+}
+
+/* Called when window is resized,
+also when window is first created,
+before the first call to display(). */
+void reshape(int w, int h) {
+    /* save new screen dimensions */
+    width = (GLdouble) w;
+    height = (GLdouble) h;
+
+    /* tell OpenGL to use the whole window for drawing */
+    glViewport(0, 0, (GLsizei) width, (GLsizei) height);
+
+    /* do an orthographic parallel projection with the coordinate
+        system set to first quadrant, limited by screen/window size */
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0, width, 0.0, height, -1.f, 1.f);
+
+    return;
+}
+
+// initialize GLUT/OpenGL Context
+void setupGlutContext(void)
+{
+    // window size
+    width  = 1280.0;                 /* initial window width and height, */
+    height = 800.0;                  /* within which we draw. */
+    points[0][0] = (int)(0.25*width);  /* (0,0) is the lower left corner */
+    points[0][1] = (int)(0.75*height);
+    points[1][0] = (int)(0.75*width);
+    points[1][1] = (int)(0.25*height);
+
+
+
+    // pass dummy vars to GLUT
+    // TODO: find a better way to pass command line args?
+    // maybe init with a separate chugin method
+    int argc = 1;
+    char *argv[1] = {(char*)"Something"};
+    glutInit(&argc, argv);
+
+    /* specify the display to be single
+    buffered and color as RGBA values */
+    // TODO: support    double buffer
+    // glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+
+    /* set the initial window size */
+    glutInitWindowSize((int) width, (int) height);
+
+    /* create the window and store the handle to it */
+    wd = glutCreateWindow("Experiment with line drawing");
+
+    /* --- register callbacks with GLUT --- */
+
+    /* */
+    glutIdleFunc(idle);
+
+    /* register function to handle window resizes */
+    glutReshapeFunc(reshape);
+
+    /* register keyboard event processing function */
+    glutKeyboardFunc(kbd);
+
+    /* register function that draws in the window */
+    glutDisplayFunc(display);
+
+    /* init GL */
+    glClearColor(1.0, 1.0, 1.0, 0.0);
+    glColor3f(0.0, 0.0, 0.0);
+    glLineWidth(3.0);
+
+    /* start the GLUT main loop */
+    glutMainLoop();
+
+    return;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1116,34 +1263,64 @@ bool go( int argc, const char ** argv )
         // start real-time audio I/O
         ChuckAudio::start();
     }
-    
-    // wait
-    while( the_chuck->vm_running() )
-    {
-        // real-time audio
-        if( g_enable_realtime_audio )
-        {
-            // NOTE: with real-time audio, chuck VM computation
-            // is driven from the audio callback function, not
-            // on this main-thread (keep-alive) loop.
 
-            // get main thread hook, call it if there is one
-            Chuck_DL_MainThreadHook * hook = the_chuck->getMainThreadHook();
-            if( hook ) {
-                hook->m_hook( hook->m_bindle );
-            } else {
-                usleep( 10000 );
+    
+    // launch glut window
+    // can't do this, has to be main thread :(
+    // std::thread glut_thread(
+    //     [&]
+    //     ()
+    //     {
+    //         EM_log( CK_LOG_SYSTEM, "Initializing Glut Context" );
+    //         setupGlutContext();
+    //     }
+    // );
+
+    EM_log( CK_LOG_SYSTEM, "launching vm thread..." );
+    // azaday, put in separate thread
+    // azaday: lol now we don't get compile errors.
+    std::thread chuck_main_vm_run_thread(
+        [&]
+        ()
+        {
+            // wait
+            while( the_chuck->vm_running() )
+            {
+                // real-time audio
+                if( g_enable_realtime_audio )
+                {
+                    // NOTE: with real-time audio, chuck VM computation
+                    // is driven from the audio callback function, not
+                    // on this main-thread (keep-alive) loop.
+
+                    // get main thread hook, call it if there is one
+                    Chuck_DL_MainThreadHook * hook = the_chuck->getMainThreadHook();
+                    if( hook ) {
+                        hook->m_hook( hook->m_bindle );
+                    } else {
+                        usleep( 10000 );
+                    }
+                }
+                else // silent mode
+                {
+                    // keep running as fast as possible
+                    the_chuck->run( input, output, buffer_size );
+                }
+                
+                // shell relate activity
+                if( check_shell_shutdown() ) break;
             }
         }
-        else // silent mode
-        {
-            // keep running as fast as possible
-            the_chuck->run( input, output, buffer_size );
-        }
-        
-        // shell relate activity
-        if( check_shell_shutdown() ) break;
-    }
+    );
+    
+    EM_log( CK_LOG_SYSTEM, "Initializing Glut Context" );
+    setupGlutContext();
+    
+    // block until vm finishes execution
+    // EM_log( CK_LOG_SYSTEM, "joining vm thread..." );
+    chuck_main_vm_run_thread.join();
+    // glut_thread.join();
+    
 
     // if chuck is still available; could have been cleaned up by shell_shutdown
     if( the_chuck != NULL )
@@ -1156,3 +1333,6 @@ bool go( int argc, const char ** argv )
 
     return TRUE;
 }
+
+
+// GLUT callback handlers
