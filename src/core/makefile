@@ -20,6 +20,9 @@ LD=g++
 
 CFLAGS+=-I. -Ilo
 
+# azaday: cpp11 for lambdas
+CFLAGS+=-std=c++11
+
 ifneq ($(CHUCK_STAT),)
 CFLAGS+= -D__CHUCK_STAT_TRACK__
 endif

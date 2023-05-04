@@ -4,16 +4,20 @@
 #include "chuck_dl.h"
 #include <mutex>
 #include <queue>
+#include <atomic>
+#include <unordered_set>
 
 #if defined(__APPLE__)
 #include <GLUT/glut.h>
 #else
-#inclu  de <GL/glut.h>
+#include <GL/glut.h>
 #endif
 
 #include <iostream>
 
 DLL_QUERY chugl_query( Chuck_DL_Query * QUERY );
+
+typedef unsigned long long ull;
 
 
 // command IDs
@@ -34,6 +38,7 @@ public:
         id = command_id; // maps to opengl instruction
         data_size = size;  
         data = malloc(data_size);
+        uid = uid_counter++; // set unique id and bump counter
     }
 
     ~ChuGLCommand() {
@@ -53,10 +58,16 @@ public:
         return id;
     }
 
+    ull getUID() {
+        return uid;
+    }
+
 private:
     ChuGLCommandID id; // make an enum?
     void *data;  // contains args for the graphics call
     t_CKUINT data_size;  // size of data buffer
+    unsigned long long uid;
+    static unsigned long long uid_counter;
 };
 
 
@@ -101,6 +112,26 @@ public:
         command_queue.push(command);
     }
 
+    static void set_atomic_clear() {
+        // clear_flag.test_and_set();
+        clear_flag = 1;
+    }
+
+    static void do_atomic_clear() {
+        if (clear_flag) {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            clear_flag = 0;
+        }
+
+        // if (clear_flag.test_and_set()) {  // fetch old value and set true
+        //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // }
+        // problem: glClear() and clear() together is not an atomic operation
+        // can have race condition where a clear command is ignored here
+        // clear_flag.clear();  // set false
+        return;
+    }
+
     static std::mutex& getLock() {
         return command_queue_mutex;
     }
@@ -120,8 +151,17 @@ public:
         while (!command_queue.empty()) {
             auto command = command_queue.front();
             command_queue.pop();
-
             auto id = command->getID();
+
+            // if (command_uid_set.find(command->getUID()) != command_uid_set.end()) {
+            if (command_uid_set.find(command->getID()) != command_uid_set.end()) {
+                // command uid found, don't re-execute
+                std::cerr << "dedup" << std::endl;
+                goto free_command;
+            } else {
+                std::cerr << "not a dup" << std::endl;
+            }
+
             if (id == ChuGLCommandID::color3) {
                 size_t off = sizeof(float);
                 glColor4f(
@@ -148,10 +188,17 @@ public:
                 glClear(GL_COLOR_BUFFER_BIT);
             }
 
+            // add uid to command hashset
+            // command_uid_set.insert(command->getUID());
+            command_uid_set.insert(command->getID());
+
+free_command:
             // release the memory
             delete command;
         }
 
+        // empty hashset
+        command_uid_set.clear();
     }
 
     // void color4(float r, float g, float b, float a);
@@ -159,6 +206,13 @@ public:
 private:
     static std::queue<ChuGLCommand *> command_queue;
     static std::mutex command_queue_mutex;  // lock on _staging buffers
+
+    // static std::atomic_flag clear_flag;
+    static int clear_flag;
+
+    // hashset to dedup graphics commands
+    static std::unordered_set<ull> command_uid_set;
+
 };
 
 #endif // _ULIB_CHUGL_H_

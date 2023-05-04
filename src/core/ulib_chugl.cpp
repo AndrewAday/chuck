@@ -92,8 +92,17 @@ DLL_QUERY chugl_query( Chuck_DL_Query * QUERY )
 }
 
 // chugl implementation
+
+// static initialization
 std::queue<ChuGLCommand *> ChuGL::command_queue;
 std::mutex ChuGL::command_queue_mutex;  // lock on _staging buffers
+
+// std::atomic_flag ChuGL::clear_flag = ATOMIC_FLAG_INIT;
+int ChuGL::clear_flag = 0;
+
+std::unordered_set<ull> ChuGL::command_uid_set;
+
+unsigned long long ChuGLCommand::uid_counter = 0;
 
 CK_DLL_CTOR(chugl_ctor)
 {
@@ -134,5 +143,6 @@ CK_DLL_MFUN(chugl_rect)
 
 CK_DLL_SFUN(chugl_clear)
 {
-    ChuGL::clear();
+    // ChuGL::clear();
+    ChuGL::set_atomic_clear();
 }

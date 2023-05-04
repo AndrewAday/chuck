@@ -74,8 +74,9 @@ void display(void) {
     /* clear the screen to white */
     // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     // glClear(GL_COLOR_BUFFER_BIT);
+    ChuGL::do_atomic_clear();
 
-    // display_counter++;
+        display_counter++;
     // std::cerr << display_counter << std::endl;
 
     // if ((display_counter / 60) % 2 == 0)

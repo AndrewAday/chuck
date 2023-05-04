@@ -2,26 +2,30 @@ TriOsc tri => dac;
 
 ChuGL chugl;
 
+(1.0/60.0)::second => dur frame;
+
 fun void animateColor() {
     while (true) {
-        // chugl.clear();
-        .5 * (Math.sin(now/second) + 1) => float c;
+        chugl.clear();
+        tri.freq() / 440. => float c;
+        1.0 - c => c;
         chugl.color(c, c, c);
-        // chugl.rect( c*1000, 0, 100, 100);
-        10::ms => now;
+        .5::frame => now;
     }
 } spork ~ animateColor();
 
 fun void rectangle() {
     while (true) {
-        
-        1::ms => now;
+        chugl.rect( tri.freq() / 420. * 1000., 0, 100, 100);
+        <<< tri.freq() / 420. * 1000.>>>;
+        .5::frame => now;
     }
 
-} //spork ~ rectangle();
+} spork ~ rectangle();
 
 <<< "running chugl test" >>>;
 
 .1 => tri.gain;
-420 => tri.freq;
-while (1::ms => now) {}
+while (1::ms => now) {
+    420. * .5 * (Math.sin(now/second) + 1.1) => tri.freq;
+}
