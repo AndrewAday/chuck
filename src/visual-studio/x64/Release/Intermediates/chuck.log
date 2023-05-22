@@ -1,0 +1,15 @@
+﻿     Creating library C:\cygwin64\home\VR Design Lab\azaday-chuck\src\visual-studio\x64\Release\chuck.lib and object C:\cygwin64\home\VR Design Lab\azaday-chuck\src\visual-studio\x64\Release\chuck.exp
+LINK : warning LNK4098: defaultlib 'MSVCRTD' conflicts with use of other libs; use /NODEFAULTLIB:library
+glfw3.lib(osmesa_context.obj) : error LNK2001: unresolved external symbol __imp__wassert
+glfw3.lib(monitor.obj) : error LNK2001: unresolved external symbol __imp__wassert
+glfw3.lib(vulkan.obj) : error LNK2001: unresolved external symbol __imp__wassert
+glfw3.lib(wgl_context.obj) : error LNK2001: unresolved external symbol __imp__wassert
+glfw3.lib(egl_context.obj) : error LNK2001: unresolved external symbol __imp__wassert
+glfw3.lib(context.obj) : error LNK2001: unresolved external symbol __imp__wassert
+glfw3.lib(window.obj) : error LNK2001: unresolved external symbol __imp__wassert
+glfw3.lib(input.obj) : error LNK2001: unresolved external symbol __imp__wassert
+glfw3.lib(win32_thread.obj) : error LNK2001: unresolved external symbol __imp__wassert
+glfw3.lib(input.obj) : error LNK2001: unresolved external symbol __imp_strspn
+glfw3.lib(init.obj) : error LNK2001: unresolved external symbol __imp_strtok
+glfw3.lib(win32_monitor.obj) : error LNK2001: unresolved external symbol __imp_wcscpy
+C:\cygwin64\home\VR Design Lab\azaday-chuck\src\visual-studio\x64\Release\chuck.exe : fatal error LNK1120: 4 unresolved externals

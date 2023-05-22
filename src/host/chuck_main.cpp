@@ -44,6 +44,13 @@
   #include <pthread.h>
 #endif
 
+// CGL Includes =====================================
+#include <thread>
+#include <mutex>
+#include "CGL/Window.h"
+
+//===================================================
+
 using namespace std;
 
 
@@ -1145,42 +1152,68 @@ bool go( int argc, const char ** argv )
     // pop indent
     EM_poplog();
 
-    // wait
-    while( the_chuck->vm_running() )
-    {
-        // real-time audio
-        if( g_enable_realtime_audio )
-        {
-            // NOTE: with real-time audio, chuck VM computation
-            // is driven from the audio callback function, not
-            // on this main-thread (keep-alive) loop.
+    // azaday: run Chuck VM on separate thread =====================
+    std::thread chuck_vm_thread(
+	[&]
+	()
+	{
+		// wait
+		while( the_chuck->vm_running() )
+		{
+			// real-time audio
+			if( g_enable_realtime_audio )
+			{
+				// NOTE: with real-time audio, chuck VM computation
+				// is driven from the audio callback function, not
+				// on this main-thread (keep-alive) loop.
 
-            // get main thread hook, call it if there is one
-            Chuck_DL_MainThreadHook * hook = the_chuck->getMainThreadHook();
-            if( hook ) {
-                hook->m_hook( hook->m_bindle );
-            } else {
-                usleep( 10000 );
-            }
-        }
-        else // silent mode
-        {
-            // keep running as fast as possible
-            the_chuck->run( input, output, buffer_size );
-        }
-        
-        // shell relate activity
-        if( check_shell_shutdown() ) break;
+				// get main thread hook, call it if there is one
+				Chuck_DL_MainThreadHook * hook = the_chuck->getMainThreadHook();
+				if( hook ) {
+					hook->m_hook( hook->m_bindle );
+				} else {
+					usleep( 10000 );
+				}
+			}
+			else // silent mode
+			{
+				// keep running as fast as possible
+				the_chuck->run( input, output, buffer_size );
+			}
+			
+			// shell relate activity
+			if( check_shell_shutdown() ) break;
+		}
+
+		// if chuck is still available; could have been cleaned up by shell_shutdown
+		if( the_chuck != NULL )
+		{
+			// get main thread hook
+			Chuck_DL_MainThreadHook * hook = the_chuck->getMainThreadHook();
+			// call it if there is one
+			if( hook ) { hook->m_quit(hook->m_bindle); }
+		}
+
+	}
+    );
+
+    // debug cwd
+#include <iostream>
+    TCHAR cwd[MAX_PATH];
+    if (GetCurrentDirectory(MAX_PATH, cwd) != 0)
+    {
+        std::cout << "cwd: " << cwd << std::endl;
     }
 
-    // if chuck is still available; could have been cleaned up by shell_shutdown
-    if( the_chuck != NULL )
-    {
-        // get main thread hook
-        Chuck_DL_MainThreadHook * hook = the_chuck->getMainThreadHook();
-        // call it if there is one
-        if( hook ) { hook->m_quit(hook->m_bindle); }
-    }
+    // azaday: GLFW context and display loop =======================================
+    EM_log( CK_LOG_SYSTEM, "setting up glfw window..." );
+    Window& window = Window::GetInstance();
+    EM_log( CK_LOG_SYSTEM, "running display loop..." );
+    window.DisplayLoop();  // blocks until user exits window
+    window.Terminate();  // closes glfw window
+
+    chuck_vm_thread.join();
 
     return TRUE;
 }
+

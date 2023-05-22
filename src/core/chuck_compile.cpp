@@ -45,6 +45,7 @@
 #include "uana_extract.h"
 
 #include "ulib_ai.h"
+#include "ulib_cgl.h"
 #include "ulib_doc.h"
 #include "ulib_machine.h"
 #include "ulib_math.h"
@@ -726,6 +727,10 @@ t_CKBOOL load_internal_modules( Chuck_Compiler * compiler )
 
     EM_log( CK_LOG_SEVERE, "module 'CKDoc'" );
     if( !load_module( compiler, env, ckdoc_query, "CKDoc", "global" ) ) goto error;
+
+    // azaday: load cgl
+    EM_log( CK_LOG_SEVERE, "module 'CGL'" );
+    if( !load_module( compiler, env, cgl_query, "CGL", "global" ) ) goto error;
 
     // clear context
     type_engine_unload_context( env );
