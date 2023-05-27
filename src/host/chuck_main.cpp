@@ -47,7 +47,7 @@
 // CGL Includes =====================================
 #include <thread>
 #include <mutex>
-#include "CGL/Window.h"
+#include "chuck_window.h"
 
 //===================================================
 

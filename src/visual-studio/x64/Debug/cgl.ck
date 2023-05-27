@@ -57,7 +57,7 @@ fun void GameLoop(){
 	while (true) {
 		UpdateEvent => now;
 		frameCounter++;
-
+		
 		// compute timing
 		now - lastTime => dur deltaTime;
 		now => lastTime;

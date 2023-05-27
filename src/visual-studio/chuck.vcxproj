@@ -30,7 +30,6 @@
     <ClInclude Include="..\CGL\VertexArray.h" />
     <ClInclude Include="..\CGL\VertexBuffer.h" />
     <ClInclude Include="..\CGL\VertexBufferLayout.h" />
-    <ClInclude Include="..\CGL\Window.h" />
     <ClInclude Include="..\core\chuck.h" />
     <ClInclude Include="..\core\chuck_absyn.h" />
     <ClInclude Include="..\core\chuck_carrier.h" />
@@ -100,6 +99,7 @@
     <ClInclude Include="..\core\util_string.h" />
     <ClInclude Include="..\core\util_thread.h" />
     <ClInclude Include="..\core\util_xforms.h" />
+    <ClInclude Include="..\host\chuck_window.h" />
     <ClInclude Include="..\host\glad\include\glad\glad.h" />
     <ClInclude Include="..\host\glad\include\KHR\khrplatform.h" />
     <ClInclude Include="..\host\GLFW\include\GLFW\glfw3.h" />
@@ -410,7 +410,6 @@
     <ClCompile Include="..\CGL\Texture.cpp" />
     <ClCompile Include="..\CGL\VertexArray.cpp" />
     <ClCompile Include="..\CGL\VertexBuffer.cpp" />
-    <ClCompile Include="..\CGL\Window.cpp" />
     <ClCompile Include="..\core\chuck.cpp" />
     <ClCompile Include="..\core\chuck_absyn.cpp" />
     <ClCompile Include="..\core\chuck_carrier.cpp" />
@@ -708,6 +707,7 @@
     <ClCompile Include="..\core\util_string.cpp" />
     <ClCompile Include="..\core\util_thread.cpp" />
     <ClCompile Include="..\core\util_xforms.c" />
+    <ClCompile Include="..\host\chuck_window.cpp" />
     <ClCompile Include="..\host\glad\src\glad.c" />
     <ClCompile Include="..\host\RtAudio\include\asio.cpp" />
     <ClCompile Include="..\host\RtAudio\include\asiodrivers.cpp" />

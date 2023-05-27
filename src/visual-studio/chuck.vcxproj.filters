@@ -277,9 +277,6 @@
     <ClCompile Include="..\CGL\VertexBuffer.cpp">
       <Filter>CGL</Filter>
     </ClCompile>
-    <ClCompile Include="..\CGL\Window.cpp">
-      <Filter>CGL</Filter>
-    </ClCompile>
     <ClCompile Include="..\CGL\scenegraph\SceneGraphObject.cpp">
       <Filter>CGL\scenegraph</Filter>
     </ClCompile>
@@ -288,6 +285,9 @@
     </ClCompile>
     <ClCompile Include="..\core\ulib_cgl.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\host\chuck_window.cpp">
+      <Filter>host</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1419,9 +1419,6 @@
     <ClInclude Include="..\CGL\VertexBufferLayout.h">
       <Filter>CGL</Filter>
     </ClInclude>
-    <ClInclude Include="..\CGL\Window.h">
-      <Filter>CGL</Filter>
-    </ClInclude>
     <ClInclude Include="..\CGL\scenegraph\SceneGraphObject.h">
       <Filter>CGL\scenegraph</Filter>
     </ClInclude>
@@ -1433,6 +1430,9 @@
     </ClInclude>
     <ClInclude Include="..\core\ulib_cgl.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\host\chuck_window.h">
+      <Filter>host</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
