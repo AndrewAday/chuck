@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <vector>
 #include "Util.h"
+#include <string>
 
 /*
 * Helper class for VertexAttribPointer assignment on VertexArrayObjects
@@ -10,6 +11,7 @@
 
 struct VertexBufferElement
 {
+	std::string name;
 	unsigned int type;
 	unsigned int count;
 	unsigned char normalize;
@@ -52,9 +54,9 @@ private:
 public:
 	VertexBufferLayout() : m_Stride(0) {};
 
-	void Push(unsigned int type, unsigned int count, unsigned char normalize)
+	void Push(const std::string& name, unsigned int type, unsigned int count, unsigned char normalize)
 	{
-		m_Elements.push_back({ type, count, normalize });
+		m_Elements.push_back({ name, type, count, normalize });
 		m_Stride += count * VertexBufferElement::GetSizeOfType(type);
 	}
 

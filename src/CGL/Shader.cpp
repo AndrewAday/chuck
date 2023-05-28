@@ -2,6 +2,7 @@
 #include "Util.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <shadinclude/Shadinclude.hpp>
 
 // TODO: break this into read file, compile, link&validate separate functions
 Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
@@ -21,13 +22,16 @@ Shader::~Shader()
 void Shader::Reload()
 {
     unsigned int reloadedProgram = CreateShaderProgram(m_VertexPath, m_FragmentPath);
-    if (reloadedProgram) {
-        Util::println("reloading shader new ID: " + std::to_string(reloadedProgram));
-        GLCall(glDeleteProgram(m_RendererID));
-        m_RendererID = reloadedProgram;
-        Bind();
-    }
-    
+    if (!reloadedProgram) { Util::println("failed to reload shader program"); }
+
+	Util::println("reloading shader new ID: " + std::to_string(reloadedProgram));
+
+    // clear cache
+    m_UniformLocationCache.clear();
+
+    // rebind
+	m_RendererID = reloadedProgram;
+	Bind();
 }
 
 void Shader::Bind()
@@ -55,6 +59,16 @@ void Shader::setFloat(const std::string& name, float value) const
     GLCall(glUniform1f(GetUniformLocation(name), value));
 }
 
+void Shader::setFloat3(const std::string& name, float x, float y, float z) const
+{
+    GLCall(glUniform3f(GetUniformLocation(name), x, y, z));
+}
+
+void Shader::setFloat3(const std::string& name, const glm::vec3 pos) const
+{
+    GLCall(glUniform3f(GetUniformLocation(name), pos.x, pos.y, pos.z));
+}
+
 void Shader::setFloat4(const std::string& name, float x, float y, float z, float w) const
 {
     GLCall(glUniform4f(GetUniformLocation(name), x, y, z, w));
@@ -64,7 +78,7 @@ void Shader::setFloat4(const std::string& name, float x, float y, float z, float
 void Shader::setTextureUnits(unsigned int n)
 {
     for (unsigned int i = 0; i < n; i++) {
-        Util::println("setting uniform texture unit u_Texture" + std::to_string(i));
+        // Util::println("setting uniform texture unit u_Texture" + std::to_string(i));
         setInt("u_Texture" + std::to_string(i), i);
     }
 }
@@ -81,7 +95,8 @@ void Shader::setMat4f(const std::string& name, const glm::mat4& mat)
 
 unsigned int Shader::CompileShader(const std::string& source, unsigned int type)
 {
-	unsigned int id = glCreateShader(type);
+    std::cout << source;
+    unsigned int id = glCreateShader(type);
 	const char* src = source.c_str();  // doesn't create new string, returns pointer to existing string
 
 	GLCall(glShaderSource(id, 1, &src, NULL));
@@ -106,8 +121,9 @@ unsigned int Shader::CreateShaderProgram(const std::string& vertexPath, const st
 {
 
     // 1. retrieve the vertex/fragment source code from filePath
-    std::string vertexCode;
-    std::string fragmentCode;
+    std::string vertexCode = Shadinclude::load(vertexPath, "#include");
+    std::string fragmentCode = Shadinclude::load(fragPath, "#include"); 
+    /*
     std::ifstream vShaderFile;
     std::ifstream fShaderFile;
     // ensure ifstream objects can throw exceptions:
@@ -134,6 +150,7 @@ unsigned int Shader::CreateShaderProgram(const std::string& vertexPath, const st
         std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
         return 0;
     }
+    */
 
     // Shader Compilation ================================
     unsigned int vertexShader, fragmentShader;

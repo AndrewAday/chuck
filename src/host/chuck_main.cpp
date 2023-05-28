@@ -48,6 +48,7 @@
 #include <thread>
 #include <mutex>
 #include "chuck_window.h"
+#include "CGL/Texture.h"
 
 //===================================================
 
@@ -456,7 +457,14 @@ void * shell_cb( void * p )
 }
 
 
+// CGL
+static Window window;
 
+// hack: must initialize default CGL things AFTER glad context is created
+// context is created in window constructor
+// going forward: avoid static globals, make them pointers instead with lazy initialization
+Texture Texture::DefaultWhiteTexture("../CGL/res/textures/default-white.png");
+Texture Texture::DefaultBlackTexture("../CGL/res/textures/default-black.png");
 
 //-----------------------------------------------------------------------------
 // name: go()
@@ -1207,8 +1215,8 @@ bool go( int argc, const char ** argv )
 
     // azaday: GLFW context and display loop =======================================
     EM_log( CK_LOG_SYSTEM, "setting up glfw window..." );
-    Window& window = Window::GetInstance();
     EM_log( CK_LOG_SYSTEM, "running display loop..." );
+
     window.DisplayLoop();  // blocks until user exits window
     window.Terminate();  // closes glfw window
 

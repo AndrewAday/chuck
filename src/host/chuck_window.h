@@ -6,29 +6,23 @@
 class Window
 {
 public:
+	Window(int viewWidth = 2400, int viewHeight = 1800);
+	~Window();
 
-	static Window& GetInstance() {
-		static Window instance;
-		return instance;
-	}
-	
 	void DisplayLoop();
 	
+	void Terminate() { glfwTerminate(); }
+
 	// set and get
 	inline GLFWwindow* GetWindow() { return m_Window; }
 	inline float GetDeltaTime() const { return m_DeltaTime; }
+	inline int GetViewWidth() { return m_ViewWidth; }
+	inline int GetViewHeight() { return m_ViewHeight; }
 	void SetViewSize(int width, int height);
-	void Terminate() { glfwTerminate(); }
 private:
-	Window();  // private constructor for singleton pattern
-	
 	// member vars
 	GLFWwindow* m_Window;
 	int m_ViewWidth, m_ViewHeight;
 	float m_DeltaTime = 0.0f;
-public:
-	Window(const Window& obj) = delete;  // delete copy constructor
-	void operator=(Window const&) = delete;
-	~Window();
 
 };

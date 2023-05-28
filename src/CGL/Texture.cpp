@@ -11,6 +11,13 @@
 * TODO: eventually support other texture types (1D, 3D, etc)
 */
 
+// default textures ======================================================
+//Texture Texture::DefaultWhiteTexture("../CGL/res/textures/default-white.png");
+//Texture Texture::DefaultBlackTexture("../CGL/res/textures/default-black.png");
+
+
+// methods ===============================================================
+
 Texture::Texture(const std::string& path)
 	: m_RendererID(0), m_FilePath(path), m_LocalBuffer(nullptr),
 	m_Width(0), m_Height(0), m_BPP(0)
@@ -76,7 +83,7 @@ Texture::~Texture()
 
 void Texture::Bind(unsigned int slot) const
 {
-	Util::println("activating texture slot " + std::to_string(slot));
+	// Util::println("activating texture slot " + std::to_string(slot));
 	// activate texture unit first (GL_TEXTURE0 is default active unit)
 	GLCall(glActiveTexture(GL_TEXTURE0 + slot));
 
@@ -86,5 +93,5 @@ void Texture::Bind(unsigned int slot) const
 
 void Texture::Unbind()
 {
-	GLCall(glBindTexture(GL_TEXTURE_2D, 0));
+	GLCall(glBindTexture(GL_TEXTURE_2D, 0))
 }

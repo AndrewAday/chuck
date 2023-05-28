@@ -22,6 +22,16 @@
     <ClInclude Include="..\CGL\Includes.h" />
     <ClInclude Include="..\CGL\IndexBuffer.h" />
     <ClInclude Include="..\CGL\Renderer.h" />
+    <ClInclude Include="..\CGL\RendererState.h" />
+    <ClInclude Include="..\CGL\scenegraph\Camera.h" />
+    <ClInclude Include="..\CGL\scenegraph\Command.h" />
+    <ClInclude Include="..\CGL\scenegraph\Geometry.h" />
+    <ClInclude Include="..\CGL\scenegraph\Group.h" />
+    <ClInclude Include="..\CGL\scenegraph\Light.h" />
+    <ClInclude Include="..\CGL\scenegraph\Material.h" />
+    <ClInclude Include="..\CGL\scenegraph\Mesh.h" />
+    <ClInclude Include="..\CGL\scenegraph\Scene.h" />
+    <ClInclude Include="..\CGL\scenegraph\SceneGraphNode.h" />
     <ClInclude Include="..\CGL\scenegraph\SceneGraphObject.h" />
     <ClInclude Include="..\CGL\scenegraph\TransformationStack.h" />
     <ClInclude Include="..\CGL\Shader.h" />
@@ -398,12 +408,31 @@
     <ClInclude Include="..\vendor\glm\vec3.hpp" />
     <ClInclude Include="..\vendor\glm\vec4.hpp" />
     <ClInclude Include="..\vendor\glm\vector_relational.hpp" />
+    <ClInclude Include="..\vendor\imgui\imconfig.h" />
+    <ClInclude Include="..\vendor\imgui\imgui.h" />
+    <ClInclude Include="..\vendor\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\vendor\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\vendor\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\vendor\imgui\imgui_internal.h" />
+    <ClInclude Include="..\vendor\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\vendor\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\vendor\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\vendor\shadinclude\Shadinclude.hpp" />
     <ClInclude Include="..\vendor\stb\stb_image.h" />
-    <ClInclude Include="CubeVertices.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\CGL\glad.c" />
     <ClCompile Include="..\CGL\IndexBuffer.cpp" />
     <ClCompile Include="..\CGL\Renderer.cpp" />
+    <ClCompile Include="..\CGL\RendererState.cpp" />
+    <ClCompile Include="..\CGL\scenegraph\Camera.cpp" />
+    <ClCompile Include="..\CGL\scenegraph\Command.cpp" />
+    <ClCompile Include="..\CGL\scenegraph\Geometry.cpp" />
+    <ClCompile Include="..\CGL\scenegraph\Light.cpp" />
+    <ClCompile Include="..\CGL\scenegraph\Material.cpp" />
+    <ClCompile Include="..\CGL\scenegraph\Mesh.cpp" />
+    <ClCompile Include="..\CGL\scenegraph\Scene.cpp" />
+    <ClCompile Include="..\CGL\scenegraph\SceneGraphNode.cpp" />
     <ClCompile Include="..\CGL\scenegraph\SceneGraphObject.cpp" />
     <ClCompile Include="..\CGL\scenegraph\TransformationStack.cpp" />
     <ClCompile Include="..\CGL\Shader.cpp" />
@@ -715,11 +744,24 @@
     <ClCompile Include="..\host\RtAudio\include\iasiothiscallresolver.cpp" />
     <ClCompile Include="..\host\RtAudio\RtAudio.cpp" />
     <ClCompile Include="..\vendor\glm\detail\glm.cpp" />
+    <ClCompile Include="..\vendor\imgui\imgui.cpp" />
+    <ClCompile Include="..\vendor\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\vendor\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\vendor\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\vendor\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\vendor\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\vendor\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\vendor\stb\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CGL\res\shaders\BasicFrag.glsl" />
+    <None Include="..\CGL\res\shaders\BasicLightingFrag.glsl" />
+    <None Include="..\CGL\res\shaders\BasicLightingVert.glsl" />
     <None Include="..\CGL\res\shaders\BasicVert.glsl" />
+    <None Include="..\CGL\res\shaders\include\Globals.glsl" />
+    <None Include="..\CGL\res\shaders\include\Lighting.glsl" />
+    <None Include="..\CGL\res\shaders\LightSourceFrag.glsl" />
+    <None Include="..\CGL\res\shaders\NormalFrag.glsl" />
     <None Include="..\core\chuck.lex" />
     <None Include="..\core\chuck.y" />
     <None Include="..\vendor\glm\detail\func_common.inl" />
@@ -862,6 +904,14 @@
   <ItemGroup>
     <Text Include="..\host\RtAudio\include\asioinfo.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\CGL\res\textures\awesomeface.png" />
+    <Image Include="..\CGL\res\textures\chuck-logo.png" />
+    <Image Include="..\CGL\res\textures\container.jpg" />
+    <Image Include="..\CGL\res\textures\default-black.png" />
+    <Image Include="..\CGL\res\textures\default-white.png" />
+    <Image Include="..\CGL\res\textures\wall.jpg" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C83D6D51-D477-4BAB-B2C2-F0698B9D3FB1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -952,7 +1002,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>__WINDOWS_MODERN__;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;_DEBUG;_CONSOLE;__WINDOWS_ASIO__;__WINDOWS_WASAPI__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\;..\vendor;..\host\glad\include;..\host\GLFW\include;..\host\RtAudio\include;.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\CGL;..\CGL\scenegraph;..\;..\vendor;..\host\glad\include;..\host\GLFW\include;..\host\RtAudio\include;.</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -990,7 +1040,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>__WINDOWS_MODERN__;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;__WINDOWS_ASIO__;__WINDOWS_WASAPI__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\;..\vendor;..\host\glad\include;..\host\GLFW\include;..\host\RtAudio\include;.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\CGL;..\CGL\scenegraph;..\;..\vendor;..\host\glad\include;..\host\GLFW\include;..\host\RtAudio\include;.</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>

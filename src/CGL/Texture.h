@@ -16,7 +16,9 @@ public:
 	void Unbind();
 
 
-
+	// default pixel textures
+	static Texture DefaultWhiteTexture;
+	static Texture DefaultBlackTexture;
 };
 
 

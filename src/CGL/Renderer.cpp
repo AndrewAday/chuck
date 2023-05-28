@@ -1,5 +1,9 @@
 #include "Renderer.h"
 #include "Util.h"
+#include "Shader.h"
+#include "VertexArray.h"
+#include "scenegraph/Geometry.h"
+#include <glad/glad.h>
 
 void Renderer::Clear(bool color, bool depth)
 {
@@ -32,4 +36,9 @@ void Renderer::Draw(VertexArray& va, Shader& shader)
 			0  // offset
 		));
 	}
+}
+
+void Renderer::Draw(Geometry& geo, Shader& shader)
+{
+	Draw(geo.GetArray(), shader);
 }

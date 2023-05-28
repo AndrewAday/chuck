@@ -11,7 +11,7 @@
 #include "CGL/Texture.h"
 #include "CGL/scenegraph/SceneGraphObject.h"
 #include "CGL/Util.h"
-#include "CGL/res/geometry/CubeVertices.h"  // TODO clean this up eventually
+#include "CGL/scenegraph/Camera.h"
 
 // chuck CORE includes
 #include "core/ulib_cgl.h" // TODO: need to expose graphics entry point in chuck.h
@@ -27,10 +27,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-SceneGraphObject camera(CGL::mainCamera); // the camera copy
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    Window::GetInstance().SetViewSize(width, height);
+    // TODO: figure out how to get access to active window object
+    // Window::GetInstance().SetViewSize(width, height);
     glViewport(
         0, 0,  // index of lower left corner of viewport, in pixels
         width, height
@@ -41,18 +41,6 @@ static void processKeyboadInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
-    
-    //const float cameraSpeed = 2.5f * Window::GetInstance().GetDeltaTime();
-    //if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    //    camera.Translate(cameraSpeed * camera.GetForward());
-    //if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    //    camera.Translate(-cameraSpeed * camera.GetForward());
-    //if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    //    camera.Translate(-cameraSpeed * camera.GetRight());
-    //if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    //    camera.Translate(cameraSpeed * camera.GetRight());
-
 }
 
 static bool drawFill = true;
@@ -80,7 +68,7 @@ void Window::SetViewSize(int width, int height)
     m_ViewHeight = height;
 }
 
-Window::Window() : m_ViewWidth(2400), m_ViewHeight(1800), m_DeltaTime(0.0f)
+Window::Window(int viewWidth, int viewHeight) : m_ViewWidth(2400), m_ViewHeight(1800), m_DeltaTime(0.0f)
 {
     // init and select openGL version ==========================
     glfwInit();
@@ -116,7 +104,8 @@ Window::Window() : m_ViewWidth(2400), m_ViewHeight(1800), m_DeltaTime(0.0f)
     glfwSetKeyCallback(m_Window, keyCallback);
 
     // mouse settings =====================================
-    // glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // glfwSetCursorPosCallback(window, mouse_callback);
 
 
     // OpenGL Metadata =======================================
@@ -132,7 +121,6 @@ Window::Window() : m_ViewWidth(2400), m_ViewHeight(1800), m_DeltaTime(0.0f)
     // depth testing
     GLCall(glEnable(GL_DEPTH_TEST));
 
-    
 
 }
 
@@ -148,60 +136,43 @@ Window::~Window()
 // chuck_main version needs to synchronize, standalone rendering engine doesn't
 void Window::DisplayLoop()
 {
-    // Mesh Data for testing ================================
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::mat4(1.0f);
-    // TODO: eventually want to update camera aspect in window resize callback
-    glm::mat4 projection = glm::perspective(  // gen perspective proj matrix, transforms from view space --> clip space
-        glm::radians(45.0f),                    // fov (45 mimics human eye with average size display sitting at avg distance away)
-        (float)m_ViewWidth / (float)m_ViewHeight,   // aspect ratio
-        0.1f,                                   // near plane
-        100.0f                                  // far plane
-    );
-
-    // Camera
-    camera.SetPosition(0.0, 0.0, 3.0f);
-    view = camera.GetInvModelMatrix();
-
-    // Vertex Array Obj setup ===========
-    VertexArray va;
-
-    VertexBuffer vb(
-        (void*)vertices,
-        sizeof(vertices),  // size in bytes
-        sizeof(vertices) / sizeof(vertices[0]),  // num elements
-        GL_STATIC_DRAW
-    );
-
-    VertexBufferLayout layout;
-    layout.Push(GL_FLOAT, 3, false);  // position data
-    layout.Push(GL_FLOAT, 2, true);  // uv data
-
-    va.AddBufferAndLayout(vb, layout);  // add vertex attrib pointers to VAO state
-
-    // Texture ===========================================
-    Texture texture0("../CGL/res/textures/wall.jpg");
-    Texture texture1("../CGL/res/textures/container.jpg");
-    Texture texture2("../CGL/res/textures/awesomeface.png");
-    Texture texture3("../CGL/res/textures/chuck-logo.png");
-    texture0.Bind(0);
-    texture1.Bind(1);
-    texture2.Bind(2);
-    texture3.Bind(3);
-
-    // Shader ============================================
-    Shader basicShader("../CGL/res/shaders/BasicVert.glsl", "../CGL/res/shaders/BasicFrag.glsl");
-    basicShader.Bind();
-
-    // Shader Uniforms ================================
-    basicShader.setTextureUnits(4);
-
-    basicShader.setMat4f("u_Model", model);
-    basicShader.setMat4f("u_View", camera.GetInvModelMatrix());
-    basicShader.setMat4f("u_Projection", projection);
-
-    // Renderer ====================================
     Renderer renderer;
+
+    // Scene setup ==========================================
+	PerspectiveCamera camera(float(m_ViewWidth) / (float)m_ViewHeight); // the camera copy
+    camera.SetPosition(0.0f, 0.0f, 3.0f);
+
+    Scene scene;
+
+    BoxGeometry boxGeo;
+    SphereGeometry sphereGeo;
+
+    NormalMaterial normMat;
+
+    Group sunSystem, earthSystem, moonSystem;
+
+    earthSystem.SetPosition(glm::vec3(2.2f, 0.0f, 0.0f));
+    moonSystem.SetPosition(.55f, 0.0f, 0.0f);
+
+    Mesh sun(&boxGeo, nullptr);
+    sun.SetScale(glm::vec3(2.0f));
+
+    Mesh earth(&boxGeo, &normMat);
+    earth.SetScale(glm::vec3(0.4f));
+
+    Mesh moon(&boxGeo, &normMat);
+    moon.SetScale(glm::vec3(0.12f));
+
+    // create graph
+    scene.AddChild(&sunSystem);
+
+    sunSystem.AddChild(&sun);
+    sunSystem.AddChild(&earthSystem);
+
+    earthSystem.AddChild(&earth);
+    earthSystem.AddChild(&moonSystem);
+
+    moonSystem.AddChild(&moon);
 
     // Render Loop ===========================================
     float previousFPSTime = (float)glfwGetTime();
@@ -227,20 +198,29 @@ void Window::DisplayLoop()
         // trigger Frame event in Chuck
         CglEvent::Broadcast(CglEventType::CGL_FRAME);
 
-        // broadcast frame event!
-
-        // OpenGL Rendering Commands =========================
-
         // wait to render until instructed by chuck
         CGL::WaitOnUpdateDone();
 
-        //Util::println("Renderer starting deepcopy");
         // chuck done with writes, renderer is good to read from the scene graph!
-        // TODO: deepcopy here
-        //Util::println("Renderer deepcopy finished");
+
+        {
+            float radius = 2.0f;
+            float posX = radius * glm::sin(currentTime);
+            float posY = radius * glm::cos(currentTime);
+
+            sunSystem.SetRotation(glm::vec3(0.0f, .5f * currentTime, 0.0f));
+            earthSystem.SetRotation(glm::vec3(0.0f, .7f * currentTime, 0.0f));
+
+            sun.SetRotation(glm::vec3(0.0f, .1f * currentTime, 0.0f));
+            earth.SetRotation(glm::vec3(0.0f, .4f * currentTime, 0.0f));
+            moon.SetRotation(glm::vec3(0.0f, .9f * currentTime, 0.0f));
+        }
+
+        camera.SetPosition(CGL::mainCamera.GetPosition());
+        camera.SetRotation(CGL::mainCamera.GetRotation());
         
         { // DEEPCOPY logic
-            camera = CGL::mainCamera;  // copy values via assignment operator
+			//Util::println("Renderer starting deepcopy");
             /*
             auto& mainCamPos = CGL::mainCamera.GetPosition();
             auto& copyCamPos = camera.GetPosition();
@@ -256,6 +236,7 @@ void Window::DisplayLoop()
 			std::cout << &camera << std::endl;
             */
             
+			//Util::println("Renderer deepcopy finished");
         }
 
         // done deepcopying, let chuck know it's good to work on the next cycle of updates
@@ -263,50 +244,15 @@ void Window::DisplayLoop()
 
         // now renderer can work on drawing the copied scenegraph ===
 
+        // OpenGL Rendering Commands =========================
         // clear screen
         renderer.Clear();
 
-        // shader hot reloading (not working :(
-         //if (glfwGetKey(window, GLFW_KEY_R)) {
-         //   basicShader.Reload();
-         //}
-
-        // setup shader pipeline
-        float greenValue = (sin(currentTime * 2.0f) / 2.0f) + 0.5f;
-        // Note: updating a uniform does require you to first use the program(by calling glUseProgram), 
-        // because it sets the uniform on the currently active shader program.
-
-        // update()
-        basicShader.setFloat4("u_Color", 0.0f, greenValue, 0.0f, 1.0f);
-
-
-        // camera.LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
-        basicShader.setMat4f("u_View", camera.GetInvModelMatrix());
-
-        //model = glm::rotate(model, glm::radians(20 * m_DeltaTime), glm::vec3(0.0, 0.0, 1.0));  // 90 deg rotation matrix
-        //model = glm::rotate(model, glm::radians(21 * m_DeltaTime), glm::vec3(1.0, 0.0, 0.0));  // 90 deg rotation matrix
-        size_t dim = 50;
-        for (size_t i = 0; i < dim; i++)
-        {
-            for (size_t j = 0; j < dim; j++)
-            {
-                auto tmp_model = glm::translate(model, glm::vec3(i*1.8, j*1.8, 0));
-				tmp_model = glm::rotate(tmp_model, glm::radians(20 * currentTime), glm::vec3(0.0, 0.0, 1.0));  // 90 deg rotation matrix
-				tmp_model = glm::rotate(tmp_model, glm::radians(21 * currentTime), glm::vec3(1.0, 0.0, 0.0));  // 90 deg rotation matrix
-				basicShader.setMat4f("u_Model", tmp_model);
-
-				renderer.Draw(va, basicShader);
-            }
-
-        }
-        // model matrix
-        //glm::mat4 trans = glm::mat4(1.0f);  // initialize identity matrix
-        //model = glm::rotate(model, glm::radians(20 * m_DeltaTime), glm::vec3(0.0, 0.0, 1.0));  // 90 deg rotation matrix
-        //model = glm::rotate(model, glm::radians(21 * m_DeltaTime), glm::vec3(1.0, 0.0, 0.0));  // 90 deg rotation matrix
-        //basicShader.setMat4f("u_Model", model);
+        // flush command queue!
+        renderer.FlushCommandQueue(scene);
 
         // draw call
-        //renderer.Draw(va, basicShader);
+        renderer.RenderScene(&scene, &camera);
 
 
         // Handle Events, Draw framebuffer

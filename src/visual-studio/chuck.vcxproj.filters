@@ -289,6 +289,57 @@
     <ClCompile Include="..\host\chuck_window.cpp">
       <Filter>host</Filter>
     </ClCompile>
+    <ClCompile Include="..\vendor\imgui\imgui.cpp">
+      <Filter>vendor\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui\imgui_demo.cpp">
+      <Filter>vendor\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui\imgui_draw.cpp">
+      <Filter>vendor\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui\imgui_impl_glfw.cpp">
+      <Filter>vendor\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui\imgui_impl_opengl3.cpp">
+      <Filter>vendor\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui\imgui_tables.cpp">
+      <Filter>vendor\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui\imgui_widgets.cpp">
+      <Filter>vendor\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\scenegraph\Camera.cpp">
+      <Filter>CGL\scenegraph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\scenegraph\Command.cpp">
+      <Filter>CGL\scenegraph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\scenegraph\Geometry.cpp">
+      <Filter>CGL\scenegraph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\scenegraph\Light.cpp">
+      <Filter>CGL\scenegraph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\scenegraph\Material.cpp">
+      <Filter>CGL\scenegraph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\scenegraph\Mesh.cpp">
+      <Filter>CGL\scenegraph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\scenegraph\Scene.cpp">
+      <Filter>CGL\scenegraph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\scenegraph\SceneGraphNode.cpp">
+      <Filter>CGL\scenegraph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\glad.c">
+      <Filter>CGL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CGL\RendererState.cpp">
+      <Filter>CGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\core\chuck.h">
@@ -1425,14 +1476,71 @@
     <ClInclude Include="..\CGL\scenegraph\TransformationStack.h">
       <Filter>CGL\scenegraph</Filter>
     </ClInclude>
-    <ClInclude Include="CubeVertices.h">
-      <Filter>CGL\res\geometry</Filter>
-    </ClInclude>
     <ClInclude Include="..\core\ulib_cgl.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="..\host\chuck_window.h">
       <Filter>host</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui\imconfig.h">
+      <Filter>vendor\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui\imgui.h">
+      <Filter>vendor\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui\imgui_impl_glfw.h">
+      <Filter>vendor\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui\imgui_impl_opengl3.h">
+      <Filter>vendor\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui\imgui_impl_opengl3_loader.h">
+      <Filter>vendor\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui\imgui_internal.h">
+      <Filter>vendor\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui\imstb_rectpack.h">
+      <Filter>vendor\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui\imstb_textedit.h">
+      <Filter>vendor\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui\imstb_truetype.h">
+      <Filter>vendor\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\shadinclude\Shadinclude.hpp">
+      <Filter>vendor\shadinclude</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\scenegraph\Camera.h">
+      <Filter>CGL\scenegraph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\scenegraph\Command.h">
+      <Filter>CGL\scenegraph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\scenegraph\Geometry.h">
+      <Filter>CGL\scenegraph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\scenegraph\Group.h">
+      <Filter>CGL\scenegraph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\scenegraph\Light.h">
+      <Filter>CGL\scenegraph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\scenegraph\Material.h">
+      <Filter>CGL\scenegraph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\scenegraph\Mesh.h">
+      <Filter>CGL\scenegraph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\scenegraph\Scene.h">
+      <Filter>CGL\scenegraph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\scenegraph\SceneGraphNode.h">
+      <Filter>CGL\scenegraph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CGL\RendererState.h">
+      <Filter>CGL</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1496,8 +1604,14 @@
     <Filter Include="CGL\res\textures">
       <UniqueIdentifier>{39790a20-d168-4624-bb3e-1d2feb40a0f1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="CGL\res\geometry">
-      <UniqueIdentifier>{874abbe8-b9bd-4193-8de0-44b705cf9397}</UniqueIdentifier>
+    <Filter Include="vendor\shadinclude">
+      <UniqueIdentifier>{d0499dd1-e532-4148-88e5-b95fee24b516}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\imgui">
+      <UniqueIdentifier>{741e96d9-5984-4a22-b5c7-afdb804c4886}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CGL\res\shaders\include">
+      <UniqueIdentifier>{61099768-2841-475a-8de9-248968056583}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1921,10 +2035,48 @@
     <None Include="..\CGL\res\shaders\BasicVert.glsl">
       <Filter>CGL\res\shaders</Filter>
     </None>
+    <None Include="..\CGL\res\shaders\BasicLightingFrag.glsl">
+      <Filter>CGL\res\shaders</Filter>
+    </None>
+    <None Include="..\CGL\res\shaders\BasicLightingVert.glsl">
+      <Filter>CGL\res\shaders</Filter>
+    </None>
+    <None Include="..\CGL\res\shaders\LightSourceFrag.glsl">
+      <Filter>CGL\res\shaders</Filter>
+    </None>
+    <None Include="..\CGL\res\shaders\NormalFrag.glsl">
+      <Filter>CGL\res\shaders</Filter>
+    </None>
+    <None Include="..\CGL\res\shaders\include\Globals.glsl">
+      <Filter>CGL\res\shaders\include</Filter>
+    </None>
+    <None Include="..\CGL\res\shaders\include\Lighting.glsl">
+      <Filter>CGL\res\shaders\include</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\host\RtAudio\include\asioinfo.txt">
       <Filter>host\RtAudio</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\CGL\res\textures\awesomeface.png">
+      <Filter>CGL\res\textures</Filter>
+    </Image>
+    <Image Include="..\CGL\res\textures\chuck-logo.png">
+      <Filter>CGL\res\textures</Filter>
+    </Image>
+    <Image Include="..\CGL\res\textures\container.jpg">
+      <Filter>CGL\res\textures</Filter>
+    </Image>
+    <Image Include="..\CGL\res\textures\default-black.png">
+      <Filter>CGL\res\textures</Filter>
+    </Image>
+    <Image Include="..\CGL\res\textures\default-white.png">
+      <Filter>CGL\res\textures</Filter>
+    </Image>
+    <Image Include="..\CGL\res\textures\wall.jpg">
+      <Filter>CGL\res\textures</Filter>
+    </Image>
   </ItemGroup>
 </Project>

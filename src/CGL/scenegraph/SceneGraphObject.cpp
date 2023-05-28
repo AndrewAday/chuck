@@ -27,6 +27,11 @@ glm::mat4 SceneGraphObject::GetInvModelMatrix()
 	return glm::inverse(GetModelMatrix());
 }
 
+glm::mat4 SceneGraphObject::GetNormalMatrix()
+{
+	return glm::transpose(GetInvModelMatrix());
+}
+
 // computes world matrix by walking down scene graph to current object
 // TODO: can optimize by caching Model and World matrices
 glm::mat4 SceneGraphObject::GetWorldMatrix()

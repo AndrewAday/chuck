@@ -1,4 +1,5 @@
 #pragma once
+#include "SceneGraphNode.h"
 #include <vector>
 #include <string>
 #include "glm/glm.hpp"
@@ -6,9 +7,8 @@
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtx/quaternion.hpp"
 
-#include "CGL/Util.h"
 
-class SceneGraphObject
+class SceneGraphObject : public SceneGraphNode
 {
 public:
 	SceneGraphObject(
@@ -31,11 +31,13 @@ public:
 	// Transform methods ======================================
 	inline glm::vec3 GetPosition() const { return m_Position; }
 	inline glm::quat GetRotation() const { return m_Rotation; }
+	inline glm::vec3 GetEulerRotationRadians() const { return glm::eulerAngles(m_Rotation); }  // returns in radians
 	inline glm::vec3 GetScale() const { return m_Scale; }
 	inline void SetPosition(const glm::vec3& position) { m_Position = position; }
 	inline void SetPosition(float x, float y, float z) { m_Position = glm::vec3(x, y, z); }
 	inline void SetRotation(const glm::quat& rotation) { m_Rotation = rotation; }
 	inline void SetRotation(const glm::vec3& eulers)   { m_Rotation = glm::quat(eulers); }
+	inline void SetRotation(float x, float y, float z)   { m_Rotation = glm::quat(glm::vec3(x, y, z)); }
 	// inline void SetRotation(const glm::vec3& rotation) { m_Rotation = rotation; }  // euler --> quat
 	inline void SetScale(const glm::vec3& scale) { m_Scale = scale; }
 
@@ -57,7 +59,8 @@ public:
 	glm::vec3 GetUp();  // cross forward and right
 	glm::mat4 GetModelMatrix();
 	glm::mat4 GetInvModelMatrix();
-	inline void Translate(const glm::vec3& t) {  m_Position += t; }
+	glm::mat4 GetNormalMatrix();  // returns transpose(inverse(model matrix)). used for updating normals under non-uniform scaling
+	inline void Translate(const glm::vec3& t) { m_Position += t; }
 	// inline void Rotate(const glm::quat& q) { m_Rotation = glm::normalize(q * m_Rotation); };
 	inline void Rotate(const glm::quat& q) { m_Rotation = q * m_Rotation; };
 	inline void Scale(const glm::vec3& s) { m_Scale *= s; };
@@ -73,13 +76,21 @@ public:
 	inline void SetParent(SceneGraphObject* parent) { m_Parent = parent;  }
 	const std::string& GetName() const { return m_Name; }
 	const std::string& SetName(const std::string& name) { m_Name = name; }
+	const std::vector<SceneGraphObject*>& GetChildren() { return m_Children; }
 
-private:
-	// transform
+
+	// type methods ========================================
+	virtual bool IsLight() { return false; }
+	virtual bool IsCamera() { return false; }
+	virtual bool IsMesh() { return false; }
+	virtual bool IsScene() { return false; }
+
+	// transform  (making public for now for easier debug)
 	glm::vec3 m_Position;
 	glm::quat m_Rotation;
 	glm::vec3 m_Scale;
 
+private:
 	// relationships
 	std::string m_Name;
 	SceneGraphObject* m_Parent;

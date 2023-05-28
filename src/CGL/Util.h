@@ -2,19 +2,21 @@
 #include <glad/glad.h>
 #include <cassert>
 #include <iostream>
-#include <string>
-#include <glm/vec3.hpp>
 
 
 #ifdef _DEBUG
+	#define ASSERTM(exp, msg) assert(((void)msg, exp))
+
 	#ifdef _MSC_VER
 	#define ASSERT(x) if (!(x)) __debugbreak();
 	#else
 	#define ASSERT(x) assert(x);
 	#endif
-#define GLCall(x) GLClearError(); x; ASSERT(GLLogErrors(#x, __FILE__, __LINE__));
+
+	#define GLCall(x) GLClearError(); x; ASSERT(GLLogErrors(#x, __FILE__, __LINE__));
 #else
 #define ASSERT(x) x
+#define ASSERTM(exp, msg) ((void)0)
 #define GLCall(x) x
 #endif
 
@@ -45,14 +47,6 @@ namespace Util
 		std::cerr << str << std::endl;
 	}
 
-	inline void printVec3(const glm::vec3& vec) {
-		std::cout << 
-			std::to_string(vec.x) + " " + std::to_string(vec.y) + " " + std::to_string(vec.z) 
-			<< std::endl;
-
-	}
-
 }
-
 
 
