@@ -15,45 +15,23 @@ enum class MaterialType {
 };
 
 // helper struct for global uniforms
-struct GlobalUniforms {
-	glm::mat4 u_Model, u_View, u_Projection;
-
-	// normals
-	glm::mat4 u_Normal;
-
-	// camera
-	glm::vec3 u_ViewPos;
-
-	// time
-	float u_Time;
-};
 
 // Material abstract base class
 class Material : public SceneGraphNode
 {
 public:
-	Material(const std::string& vertPath, const std::string& fragPath) 
-		: m_Shader(vertPath, fragPath), m_WireFrame(false), m_WireFrameLineWidth(1.0f) {};
+	Material() : m_WireFrame(false), m_WireFrameLineWidth(1.0f) {};
 
 	virtual MaterialType GetMaterialType() { return MaterialType::Base; }
 
-	virtual void BindShader() { m_Shader.Bind(); }
-	virtual void SetLocalUniforms() = 0;  // for setting properties specific to the material, e.g. color
+	// TODO: need to decouple this from the scenegraph material,
+	// implement entirely in RenderMaterial but to do so need way to support generic
+	// uniform parameter specification.
+	// e.g. specify a uniform name, value, and type maybe stored in a cpu-side buffer
+	virtual void SetLocalUniforms(Shader* shader) = 0;  // for setting properties specific to the material, e.g. color
 	virtual Material* Clone(bool copyID = true) = 0;
 
-	// for settings properties inherent the overall scene, e.g. cameraPos, time, etc.
-	virtual void SetGlobalUniforms(const GlobalUniforms& globals);;
-	Shader& GetShader() { return m_Shader;  }
-	std::string GetVertPath() { return m_Shader.GetVertPath(); }
-	std::string GetFragPath() { return m_Shader.GetFragPath(); }
-
-public: // statics
-	static Material* GetDefaultMaterial();
-
 private:
-	static Material* defaultMat;
-
-	Shader m_Shader;
 	// TODO: wireframing
 	bool m_WireFrame;
 	float m_WireFrameLineWidth;
@@ -63,16 +41,11 @@ private:
 class NormalMaterial : public Material
 {
 public:
-	NormalMaterial() : 
-		Material("../CGL/res/shaders/BasicLightingVert.glsl", "../CGL/res/shaders/NormalFrag.glsl"),
-		m_UseLocalNormals(false) {}
+	NormalMaterial() : m_UseLocalNormals(false) {}
 	virtual MaterialType GetMaterialType() override { return MaterialType::Normal; }
-	virtual void SetLocalUniforms() override {
-		auto& shader = GetShader();
-		BindShader();
-
+	virtual void SetLocalUniforms(Shader* shader) override {
 		// set uniforms
-		shader.setInt("u_UseLocalNormal", m_UseLocalNormals ? 1 : 0);
+		shader->setInt("u_UseLocalNormal", m_UseLocalNormals ? 1 : 0);
 	}
 	virtual Material* Clone(bool copyID = true) override {
 		
@@ -116,13 +89,13 @@ public:
 		glm::vec3 diffuseColor = glm::vec3(1.0f),
 		glm::vec3 specularColor = glm::vec3(1.0f),
 		float logShininess = 5  // ==> 32 shininess
-	) : Material("./res/shaders/BasicLightingVert.glsl", "./res/shaders/BasicLightingFrag.glsl"),
+	) :
 		m_Uniforms({ diffuseMap, specularMap, diffuseColor, specularColor, logShininess })
 	{
 
 	}
 	virtual MaterialType GetMaterialType() override { return MaterialType::Phong; }
-	virtual void SetLocalUniforms() override;
+	virtual void SetLocalUniforms(Shader* shader) override;
 private:
 	PhongMatUniforms m_Uniforms;
 };

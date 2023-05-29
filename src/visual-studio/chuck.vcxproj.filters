@@ -334,9 +334,6 @@
     <ClCompile Include="..\CGL\scenegraph\SceneGraphNode.cpp">
       <Filter>CGL\scenegraph</Filter>
     </ClCompile>
-    <ClCompile Include="..\CGL\glad.c">
-      <Filter>CGL</Filter>
-    </ClCompile>
     <ClCompile Include="..\CGL\RendererState.cpp">
       <Filter>CGL</Filter>
     </ClCompile>

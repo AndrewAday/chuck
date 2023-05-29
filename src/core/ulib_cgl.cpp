@@ -10,6 +10,8 @@ static t_CKUINT cglframe_data_offset = 0;
 static t_CKUINT cglupdate_data_offset = 0;
 static t_CKUINT cglobject_data_offset = 0;
 static t_CKUINT cglcamera_data_offset = 0;
+static t_CKUINT cglgeo_data_offset = 0;
+
 DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 {
 	// Frame event =================================
@@ -102,6 +104,24 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->begin_class(QUERY, "CGL", "Object");
 	QUERY->add_sfun(QUERY, cgl_render, "void", "Render");
 	QUERY->end_class(QUERY);
+
+	// geometry
+	QUERY->begin_class(QUERY, "CGLgeo", "Object");
+	QUERY->add_ctor(QUERY, cgl_geo_ctor);
+	QUERY->add_dtor(QUERY, cgl_geo_dtor);
+	cglgeo_data_offset = QUERY->add_mvar(QUERY, "int", "@cglgeo_data", false);
+	QUERY->end_class(QUERY);
+
+	QUERY->begin_class(QUERY, "BoxGeo", "CGLgeo");
+	QUERY->add_ctor(QUERY, cgl_geo_box_ctor);
+	QUERY->add_dtor(QUERY, cgl_geo_dtor);
+	QUERY->end_class(QUERY);
+
+	QUERY->begin_class(QUERY, "SphereGeo", "CGLgeo");
+	QUERY->add_ctor(QUERY, cgl_geo_sphere_ctor);
+	QUERY->add_dtor(QUERY, cgl_geo_dtor);
+	QUERY->end_class(QUERY);
+
 
 
 	return TRUE;
@@ -220,6 +240,10 @@ CK_DLL_MFUN(cgl_obj_translate_by)
 	SceneGraphObject* cglObj = (SceneGraphObject*) OBJ_MEMBER_INT (SELF, cglobject_data_offset);
 	t_CKVEC3 trans = GET_NEXT_VEC3(ARGS);
 	cglObj->Translate(glm::vec3(trans.x, trans.y, trans.z));
+
+	// add to command queue
+	CGL::PushCommand(new TransformCommand(cglObj));
+
 	RETURN->v_object = SELF;
 }
 
@@ -237,6 +261,9 @@ CK_DLL_MFUN(cgl_obj_rot_on_local_axis)
 	t_CKVEC3 vec = GET_NEXT_VEC3(ARGS);
 	t_CKFLOAT deg = GET_NEXT_FLOAT(ARGS);
 	cglObj->RotateOnLocalAxis(glm::vec3(vec.x, vec.y, vec.z), deg);
+
+	CGL::PushCommand(new TransformCommand(cglObj));
+
 	RETURN->v_object = SELF;
 }
 
@@ -246,6 +273,9 @@ CK_DLL_MFUN(cgl_obj_rot_on_world_axis)
 	t_CKVEC3 vec = GET_NEXT_VEC3(ARGS);
 	t_CKFLOAT deg = GET_NEXT_FLOAT(ARGS);
 	cglObj->RotateOnWorldAxis(glm::vec3(vec.x, vec.y, vec.z), deg);
+
+	CGL::PushCommand(new TransformCommand(cglObj));
+
 	RETURN->v_object = SELF;
 }
 
@@ -358,6 +388,35 @@ CK_DLL_DTOR(cgl_cam_dtor)
 	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = 0;  // zero out the memory
 }
 
+// CGL Geometry =======================
+CK_DLL_CTOR(cgl_geo_ctor)
+{
+	std::cerr << "cgl_geo_ctor\n";
+	// dud, do nothing for now
+}
+
+CK_DLL_DTOR(cgl_geo_dtor)  // all geos can share this base destructor
+{
+	Geometry* geo = (Geometry*)OBJ_MEMBER_INT(SELF, cglgeo_data_offset);
+	SAFE_DELETE(geo);
+	OBJ_MEMBER_INT(SELF, cglgeo_data_offset) = 0;  // zero out the memory
+}
+
+CK_DLL_CTOR(cgl_geo_box_ctor)
+{
+	std::cerr << "cgl_box_ctor\n";
+	OBJ_MEMBER_INT(SELF, cglgeo_data_offset) = (t_CKINT) new BoxGeometry;
+	std::cerr << "finished initializing boxgeo\n";
+}
+
+CK_DLL_CTOR(cgl_geo_sphere_ctor)
+{
+	std::cerr << "cgl_sphere_ctor\n";
+	OBJ_MEMBER_INT(SELF, cglgeo_data_offset) = (t_CKINT) new SphereGeometry;
+	std::cerr << "finished initializing spheregeo\n";
+}
+
+
 // CglEvent ========================================
 
 // CglEventstatic initialization (again, should be refactored to be accessible through chuck.h)
@@ -369,8 +428,19 @@ std::vector<CglEvent*> CglEvent::m_WindowResizeEvents;
 bool CGL::shouldRender = false;
 std::mutex CGL::GameLoopLock;
 std::condition_variable CGL::renderCondition;
+
+Scene CGL::mainScene;
+// TODO: hardcoding aspect, make resolution respond to window resize event in chuck script
+// PerspectiveCamera CGL::mainCamera(2400.0f/1800.0f);
 SceneGraphObject CGL::mainCamera;
 Chuck_Event CGL::s_UpdateChuckEvent;
+
+// CGL static command queue initialization
+std::vector<SceneGraphCommand*> CGL::m_ThisCommandQueue;
+std::vector<SceneGraphCommand*> CGL::m_ThatCommandQueue;
+bool CGL::m_CQReadTarget = false;  // false = this, true = that
+std::mutex CGL::m_CQLock; // only held when 1: adding new command and 2: swapping the read/write queues
+
 
 
 std::vector<CglEvent*>& CglEvent::GetEventQueue(CglEventType type)

@@ -13,7 +13,8 @@
 	#define ASSERT(x) assert(x);
 	#endif
 
-	#define GLCall(x) GLClearError(); x; ASSERT(GLLogErrors(#x, __FILE__, __LINE__));
+#define GLCall(x) GLClearError(#x, __FILE__, __LINE__); x; ASSERT(GLLogErrors(#x, __FILE__, __LINE__));
+	//#define GLCall(x) ASSERT(GLLogErrors(#x, __FILE__, __LINE__)); x;
 #else
 #define ASSERT(x) x
 #define ASSERTM(exp, msg) ((void)0)
@@ -21,9 +22,15 @@
 #endif
 
 
-static void GLClearError()
-{
-	while (glGetError() != GL_NO_ERROR);
+static void GLClearError(const char* function, const char* file, int line)
+{	
+	GLenum error;
+	while ((error = glGetError()) != GL_NO_ERROR) {
+		std::cout << "CLEARING: [OpenGL Error] (" << error << ")" << 
+			function << " " << file << ":" << line <<
+			std::endl;
+
+	}
 }
 
 static bool GLLogErrors(const char* function, const char* file, int line)

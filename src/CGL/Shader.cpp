@@ -95,7 +95,6 @@ void Shader::setMat4f(const std::string& name, const glm::mat4& mat)
 
 unsigned int Shader::CompileShader(const std::string& source, unsigned int type)
 {
-    std::cout << source;
     unsigned int id = glCreateShader(type);
 	const char* src = source.c_str();  // doesn't create new string, returns pointer to existing string
 

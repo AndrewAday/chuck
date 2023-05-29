@@ -48,27 +48,11 @@ class Geometry : public SceneGraphNode // abstract base class for buffered geome
 {
 public:
 	virtual ~Geometry() {}
-    virtual void Bind() {}  // bind the underlying geometry
 	virtual GeometryType GetGeoType() = 0;
 	virtual Geometry* Clone() = 0;  // deepcopy the geometry data
 
-
 	std::vector<Index> m_Indices;
 	std::vector<Vertex> m_Vertices;
-
-	VertexBufferLayout& GetLayout() { return m_Layout; }
-	VertexBuffer& GetBuffer() { return m_VB; }
-	VertexArray& GetArray() { return m_VA; }
-	IndexBuffer& GetIndex() { return m_IB; }
-
-	virtual void BuildGeometry();  // TODO: don't need to have duplicate buffer data across scene graphs.
-	// only the renderer actually needs to copy the data to the GPU
-private:
-    
-    VertexArray m_VA;
-    VertexBuffer m_VB;
-	IndexBuffer m_IB;
-    VertexBufferLayout m_Layout;
 };
 
 class BoxGeometry : public Geometry

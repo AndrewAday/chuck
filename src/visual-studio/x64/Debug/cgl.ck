@@ -1,3 +1,6 @@
+SphereGeo sphereGeo;
+BoxGeo boxGeo;
+
 InputManager IM;
 spork ~ IM.start(0);
 
@@ -5,6 +8,7 @@ MouseManager MM;
 spork ~ MM.start(0);
 
 CglUpdate UpdateEvent;
+CglFrame FrameEvent;
 CglCamera mainCamera;
 0 => int frameCounter;
 1 => int autoRender;
@@ -55,7 +59,23 @@ UpdateEvent => now;
 CGL.Render(); // kick of the renderer
 fun void GameLoop(){
 	while (true) {
+		// 10::ms => now;  // don't need events anymore!!!
+		/*
+		but still have problem: 
+		if you are writing every event, command queue write rate will go out of sync with the
+		renderer flush rate.
+		E.g. say you want to write 2 commands every frame, on FrameEvent => now;
+		sometimes the renderer will see 2 commands, somestimes 0, sometimes 4
+			- results occassional stuttering :(
+		The full work-around is to have the conditional_var sync mechanism + command queue
+		but then this prevents us from writing CGL commands freely in chuck side
+
+		maybe best case is to use command queue + conditional sync var, but 
+		let the chuck VM take care of syncing? how would this work?
+
+		*/
 		UpdateEvent => now;
+		// FrameEvent => now;
 		frameCounter++;
 		
 		// compute timing

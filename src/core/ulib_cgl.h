@@ -3,6 +3,10 @@
 #include "chuck_dl.h"
 
 #include "CGL/scenegraph/SceneGraphObject.h"
+#include "CGL/scenegraph/Camera.h"
+#include "CGL/scenegraph/Scene.h"
+#include "CGL/scenegraph/Command.h"
+#include "CGL/scenegraph/Geometry.h"
 
 #include <condition_variable>
 #include <vector>
@@ -57,6 +61,12 @@ CK_DLL_MFUN(cgl_obj_get_scale);
 CK_DLL_CTOR(cgl_cam_ctor);
 CK_DLL_DTOR(cgl_cam_dtor);
 
+// CGL Geometry
+CK_DLL_CTOR(cgl_geo_ctor);
+CK_DLL_DTOR(cgl_geo_dtor);
+CK_DLL_CTOR(cgl_geo_box_ctor);
+CK_DLL_CTOR(cgl_geo_sphere_ctor);
+
 // class definitions ===============================
 
 enum class CglEventType {
@@ -99,10 +109,77 @@ public:
 	static std::mutex GameLoopLock;
 	static std::condition_variable renderCondition;
 
+	static Scene mainScene;
 	static SceneGraphObject mainCamera;
+	// static PerspectiveCamera mainCamera;
 
 	static Chuck_Event s_UpdateChuckEvent;  // event used for waiting on update()
+
+public: // command queue methods
+	// swap the command queue double buffer
+	static void SwapCommandQueues() { 
+
+		// grab lock
+		std::lock_guard<std::mutex> lock(m_CQLock);
+
+		// swap
+		m_CQReadTarget = !m_CQReadTarget;
+
+		// lock released
+	}
+
+	// performan all queued commands to sync the renderer scenegraph with the CGL scenegraph
+	static void FlushCommandQueue(Scene& scene, bool swap) {  // TODO: shouldn't command be associated with scenes?
+		// swap the command queues (so we can read from what was just being written to)
+		if (swap)
+			SwapCommandQueues();  // Note: this already locks the command queue
+
+		// we no longer need to hold a lock here because all writes are done to the other queue
+
+		// get the new read queue
+		std::vector<SceneGraphCommand*>& readQueue = GetReadCommandQueue();\
+		
+		// std::cout << "flushing " + std::to_string(readQueue.size()) + " commands\n";
+
+		// execute all commands in the read queue
+		for (auto& cmd : readQueue) {
+			cmd->execute(&scene);
+			delete cmd;  // release memory TODO make this a unique_ptr or something instead
+		}
+
+		// clear the read queue
+		readQueue.clear();
+	}
+
+	// adds command to the read queue
+	static void PushCommand(SceneGraphCommand * cmd) {
+		// lock the command queue
+		std::lock_guard<std::mutex> lock(m_CQLock);
+
+		// get the write queue
+		std::vector<SceneGraphCommand*>& writeQueue = GetWriteCommandQueue();
+
+		// add the command to the write queue
+		writeQueue.push_back(cmd);
+	}
+
+private: // attributes
+	// command queues 
+	// the commands need to be executed before renderering...putting here for now
+	static std::vector<SceneGraphCommand*> m_ThisCommandQueue;
+	static std::vector<SceneGraphCommand*> m_ThatCommandQueue;
+	static bool m_CQReadTarget;  // false = this, true = that
+	// command queue lock
+	static std::mutex m_CQLock; // only held when 1: adding new command and 2: swapping the read/write queues
 private:
+	static inline std::vector<SceneGraphCommand*>& GetReadCommandQueue() { 
+		return m_CQReadTarget ? m_ThatCommandQueue : m_ThisCommandQueue; 
+	}
+	// get the write target command queue
+	static inline std::vector<SceneGraphCommand*>& GetWriteCommandQueue() {
+		return m_CQReadTarget ? m_ThisCommandQueue : m_ThatCommandQueue;
+	}
+
 	
 
 

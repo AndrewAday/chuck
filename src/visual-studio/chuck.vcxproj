@@ -421,7 +421,6 @@
     <ClInclude Include="..\vendor\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\CGL\glad.c" />
     <ClCompile Include="..\CGL\IndexBuffer.cpp" />
     <ClCompile Include="..\CGL\Renderer.cpp" />
     <ClCompile Include="..\CGL\RendererState.cpp" />

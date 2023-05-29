@@ -145,7 +145,7 @@ void Window::DisplayLoop()
     Scene scene;
 
     BoxGeometry boxGeo;
-    SphereGeometry sphereGeo;
+    // SphereGeometry sphereGeo;
 
     NormalMaterial normMat;
 
@@ -174,6 +174,14 @@ void Window::DisplayLoop()
 
     moonSystem.AddChild(&moon);
 
+    // Copy from CGL scenegraph ====================================    
+    scene.SetID(CGL::mainScene.GetID());  // copy scene ID
+    scene.RegisterNode(&scene);  // register itself
+    camera.SetID(CGL::mainCamera.GetID());  // copy maincam ID
+    scene.RegisterNode(&camera);  // register camera
+
+
+
     // Render Loop ===========================================
     float previousFPSTime = (float)glfwGetTime();
     float prevTickTime = previousFPSTime;
@@ -199,11 +207,11 @@ void Window::DisplayLoop()
         CglEvent::Broadcast(CglEventType::CGL_FRAME);
 
         // wait to render until instructed by chuck
-        CGL::WaitOnUpdateDone();
+        // TODO: will probably have to re-enable this
 
         // chuck done with writes, renderer is good to read from the scene graph!
 
-        {
+        {  // rotate the universe
             float radius = 2.0f;
             float posX = radius * glm::sin(currentTime);
             float posY = radius * glm::cos(currentTime);
@@ -216,31 +224,40 @@ void Window::DisplayLoop()
             moon.SetRotation(glm::vec3(0.0f, .9f * currentTime, 0.0f));
         }
 
-        camera.SetPosition(CGL::mainCamera.GetPosition());
-        camera.SetRotation(CGL::mainCamera.GetRotation());
+        // camera.SetPosition(CGL::mainCamera.GetPosition());
+        // camera.SetRotation(CGL::mainCamera.GetRotation());
         
-        { // DEEPCOPY logic
-			//Util::println("Renderer starting deepcopy");
-            /*
-            auto& mainCamPos = CGL::mainCamera.GetPosition();
-            auto& copyCamPos = camera.GetPosition();
+        CGL::WaitOnUpdateDone();
+        /*
+        Note: this sync mechanism also gets rid of the problem where chuck runs away
+        e.g. if the time it takes the renderer flush the queue is greater than
+        the time it takes chuck to write, ie write rate > flush rate,
+        each command queue will get longer and longer, continually worsening performance
+        shouldn't happen because chuck runs in vm and the flushing happens natively but 
+        you never know
+        */
+        /*
+        it is redundant to have two locks here:
+        1 for writing/swapping the command queues
+        1 for the condition_var used to synchronize
+        technically if we use the condition var the command queue lock 
+        is unnecessary because the queue will only be swapped when chuck is blocked
+        on receiving an UpdateEvent from the renderer
+        but having the command queue lock protects against the case where 
+        people write CGL code outside of the sync context 
+        anyways the overhead is so low (~100ns) its not important
 
-            Util::println("mainCamera pos");
-            Util::printVec3(mainCamPos);
-			Util::println("mainCam address");
-			 std::cout << &CGL::mainCamera << std::endl;
-
-            Util::println("copyCam pos");
-            Util::printVec3(copyCamPos);
-			Util::println("copyCam address");
-			std::cout << &camera << std::endl;
-            */
-            
-			//Util::println("Renderer deepcopy finished");
+        deadlock shouldn't happen because both locks are never held at the same time
+        */
+        { // critical section: swap command queus
+            CGL::SwapCommandQueues();
         }
 
-        // done deepcopying, let chuck know it's good to work on the next cycle of updates
+        // done deepcopying, let chuck know it's good to continue pushing commands
         CglEvent::Broadcast(CglEventType::CGL_UPDATE);
+
+        // now apply changes from the command queue chuck is NO Longer writing to 
+        CGL::FlushCommandQueue(scene, false);
 
         // now renderer can work on drawing the copied scenegraph ===
 
@@ -249,7 +266,7 @@ void Window::DisplayLoop()
         renderer.Clear();
 
         // flush command queue!
-        renderer.FlushCommandQueue(scene);
+        // renderer.FlushCommandQueue(scene);
 
         // draw call
         renderer.RenderScene(&scene, &camera);

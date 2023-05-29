@@ -9,18 +9,163 @@
 #include "Command.h"
 
 #include <mutex>
-#include <vector> 
+#include <vector>
+#include <unordered_map>
 
 class VertexArray;
 class Shader;
 class Geometry;
+
+
+// Renderer helper classes (encapsulate SceneGraph classes)
+/*
+This encapsulation is to decouple the scenegraph objects from any
+graphics-specific implementation code. 
+E.g. the Geometry scenegraph node only contains CPU-side vertex data,
+and does NOT know about any GPU-side vertex buffers, etc.
+
+The renderer is responsible for creating and managing the GPU-side
+
+This way the same CGL SceneGraph can be implemented by variety of rendering backends,
+including OpenGL, WebGPU, Vulkan, etc.
+*/
+
+// Given a Geometry object, this class manages the GPU-side vertex buffers
+class RenderGeometry {
+public:
+	RenderGeometry(Geometry* geo) : m_Geo(geo) {
+		BuildGeometry();
+	}
+	~RenderGeometry() {}
+
+    inline void Bind() { m_VA.Bind(); }  // bind the underlying geometry
+	void BuildGeometry();
+
+
+	// CPU side data
+	std::vector<Index>& GetIndices() { return m_Geo->m_Indices; }
+	std::vector<Vertex>& GetVertices() { return m_Geo->m_Vertices; }
+
+	// GPU buffers
+	VertexBufferLayout& GetLayout() { return m_Layout; }
+	VertexBuffer& GetBuffer() { return m_VB; }
+	VertexArray& GetArray() { return m_VA; }
+	IndexBuffer& GetIndex() { return m_IB; }
+private:
+	Geometry* m_Geo;
+    
+	// GPU buffer data
+    VertexArray m_VA;
+    VertexBuffer m_VB;
+	IndexBuffer m_IB;
+    VertexBufferLayout m_Layout;
+};
+
+struct GlobalUniforms {
+	glm::mat4 u_Model, u_View, u_Projection;
+
+	// normals
+	glm::mat4 u_Normal;
+
+	// camera
+	glm::vec3 u_ViewPos;
+
+	// time
+	float u_Time;
+};
+
+// Manages GPU side data for a material
+class RenderMaterial {
+public:
+	RenderMaterial(Material* mat) : m_Mat(mat), m_Shader(nullptr) 
+	{	
+		std::string vertPath, fragPath;
+		// factory method to create the correct shader based on the material type
+		switch(mat->GetMaterialType()) {
+			case MaterialType::Normal:
+				// TODO: really should abstract this to a shader resource locator class
+				vertPath = "../CGL/res/shaders/BasicLightingVert.glsl";
+				fragPath = "../CGL/res/shaders/NormalFrag.glsl";
+				break;
+			case MaterialType::Phong:
+ 				vertPath = "./res/shaders/BasicLightingVert.glsl";
+				fragPath = "./res/shaders/BasicLightingFrag.glsl";
+				assert(false && "phong unimplemented");
+			default:  // default material (normal mat for now)
+				vertPath = "../CGL/res/shaders/BasicLightingVert.glsl";
+				fragPath = "../CGL/res/shaders/NormalFrag.glsl";
+		}
+
+		m_Shader = new Shader(vertPath, fragPath);
+
+	}
+	~RenderMaterial() {}
+
+	// CPU side data
+	Shader* GetShader() { return m_Shader; }
+	std::string GetVertPath() { return m_Shader->GetVertPath(); }
+	std::string GetFragPath() { return m_Shader->GetFragPath(); }
+
+	// GPU side data
+	virtual void BindShader() { m_Shader->Bind(); }
+	void SetLocalUniforms() {
+		m_Mat->SetLocalUniforms(m_Shader);  // eventually move this logic out of Material and into RenderMaterial
+	}
+	void SetGlobalUniforms(const GlobalUniforms& globals) {
+		BindShader();
+
+		m_Shader->setMat4f("u_Model", globals.u_Model);
+		m_Shader->setMat4f("u_View", globals.u_View);
+		m_Shader->setMat4f("u_Projection", globals.u_Projection);
+		m_Shader->setMat4f("u_Normal", globals.u_Normal);
+		m_Shader->setFloat3("u_ViewPos", globals.u_ViewPos);
+		m_Shader->setFloat("u_Time", globals.u_Time);
+	}
+
+public:  // statics
+	static RenderMaterial* GetDefaultMaterial();
+	static RenderMaterial* defaultMat;
+
+private:
+	Material* m_Mat;
+	Shader* m_Shader;
+
+};
+
+
+
 
 class Renderer
 {
 public:
 	void Clear(bool color = true, bool depth = true);
 	void Draw(VertexArray& va, Shader& shader); // TODO: refactor to use materials
-	void Draw(Geometry& geo, Shader& shader); // TODO: refactor to use materials
+	void Draw(RenderGeometry* geo, Shader& shader); // TODO: refactor to use materials
+	void Draw(RenderGeometry* renderGeo, RenderMaterial* renderMat) {
+		Shader* shader = renderMat->GetShader();
+		shader->Bind();
+
+		VertexArray& va = renderGeo->GetArray();
+		va.Bind();
+
+		if (va.GetIndexBuffer() == nullptr) {
+			GLCall(glDrawArrays(
+				GL_TRIANGLES,
+				0,  // starting index
+				va.GetVertexBuffer()->GetCount()
+			));
+		}
+		else
+		{
+			GLCall(glDrawElements(
+				GL_TRIANGLES,
+				va.GetIndexBufferCount(),
+				GL_UNSIGNED_INT,   // type of index in EBO
+				0  // offset
+			));
+		}
+	}
+
 
 
 
@@ -42,40 +187,6 @@ public:
 		
 		// TODO set globals (lighting)
 		RenderNodeAndChildren(scene);
-	}
-
-	// commmand queue scenegraph state sync ==================================================================
-
-	// performan all queued commands to sync the renderer scenegraph with the CGL scenegraph
-	void FlushCommandQueue(Scene& scene) {  // TODO: shouldn't command be associated with scenes?
-		// swap the command queues (so we can read from what was just being written to)
-		SwapCommandQueues();  // Note: this already locks the command queue
-
-		// we no longer need to hold a lock here because all writes are done to the other queue
-
-		// get the new read queue
-		std::vector<SceneGraphCommand*>& readQueue = GetReadCommandQueue();
-
-		// execute all commands in the read queue
-		for (auto& cmd : readQueue) {
-			cmd->execute(&scene);
-			delete cmd;  // release memory TODO make this a unique_ptr or something instead
-		}
-
-		// clear the read queue
-		readQueue.clear();
-	}
-
-	// adds command to the read queue
-	void PushCommand(SceneGraphCommand * cmd) {
-		// lock the command queue
-		std::lock_guard<std::mutex> lock(m_CQLock);
-
-		// get the write queue
-		std::vector<SceneGraphCommand*>& writeQueue = GetWriteCommandQueue();
-
-		// add the command to the write queue
-		writeQueue.push_back(cmd);
 	}
 
 private:  // private methods
@@ -113,14 +224,16 @@ private:  // private methods
 		// if no geometry nothing to draw
 		if (!geo) { return; }
 
-		// if no material, use default
-		if (!mat) { 
-			mat = Material::GetDefaultMaterial(); 
-		}
+
+		// lookup or create render geometry
+		RenderGeometry* renderGeo = GetOrCreateRenderGeo(geo);
+
+		// lookup or create render material
+		RenderMaterial* renderMat = GetOrCreateRenderMat(mat);
 
 		// set uniforms
-		mat->SetLocalUniforms();
-		mat->SetGlobalUniforms({
+		renderMat->SetLocalUniforms();
+		renderMat->SetGlobalUniforms({
 			worldTransform,
 			m_RenderState.GetViewMat(),
 			m_RenderState.GetProjMat(),
@@ -130,7 +243,37 @@ private:  // private methods
 		});
 
 		// draw
-		Draw(*geo, mat->GetShader());
+		Draw(renderGeo, renderMat);
+	}
+
+	RenderGeometry* GetOrCreateRenderGeo(Geometry* geo) {
+		size_t ID = geo->GetID();
+		if (m_RenderGeometries.find(ID) != m_RenderGeometries.end()) {
+			return m_RenderGeometries[ID];
+		}
+
+		// not found, create it
+		RenderGeometry* renderGeo = new RenderGeometry(geo);
+		// cache it
+		m_RenderGeometries[ID] = renderGeo;
+		return renderGeo;
+	}
+
+	RenderMaterial* GetOrCreateRenderMat(Material* mat) {
+		if (mat == nullptr) { // return default material
+			return RenderMaterial::GetDefaultMaterial();
+		}
+
+		size_t ID = mat->GetID();
+		if (m_RenderMaterials.find(ID) != m_RenderMaterials.end()) {
+			return m_RenderMaterials[ID];
+		}
+
+		// not found, create it
+		RenderMaterial* renderMat = new RenderMaterial(mat);
+		// cache it
+		m_RenderMaterials[ID] = renderMat;
+		return renderMat;
 	}
 
 
@@ -139,33 +282,12 @@ private:  // private member vars
 	RendererState m_RenderState;
 	Camera* m_MainCamera;
 
+	// GPU resources
+	// TODO: should I key on SceneGraphNode ID or pointer?
+	// std::unordered_map<Geometry*, RenderGeometry*> m_RenderGeometries;
+	std::unordered_map<size_t, RenderGeometry*> m_RenderGeometries;
+	// std::unordered_map<Material*, RenderMaterial*> m_RenderMaterials;
+	std::unordered_map<size_t, RenderMaterial*> m_RenderMaterials;
 
-	// command queues (TODO is renderer the right place for these to live??)
-	// the commands need to be executed before renderering...putting here for now
-	std::vector<SceneGraphCommand*> m_ThisCommandQueue;
-	std::vector<SceneGraphCommand*> m_ThatCommandQueue;
-	bool m_CQReadTarget = false;  // false = this, true = that
-	// command queue lock
-	std::mutex m_CQLock; // only held when 1: adding new command and 2: swapping the read/write queues
-
-private: // methods
-	inline std::vector<SceneGraphCommand*>& GetReadCommandQueue() { 
-		return m_CQReadTarget ? m_ThatCommandQueue : m_ThisCommandQueue; 
-	}
-	// get the write target command queue
-	inline std::vector<SceneGraphCommand*>& GetWriteCommandQueue() {
-		return m_CQReadTarget ? m_ThisCommandQueue : m_ThatCommandQueue;
-	}
-
-	// swap the command queue double buffer
-	void SwapCommandQueues() { 
-		// grab lock
-		std::lock_guard<std::mutex> lock(m_CQLock);
-
-		// swap
-		m_CQReadTarget = !m_CQReadTarget;
-
-		// lock released
-	}
 };
 

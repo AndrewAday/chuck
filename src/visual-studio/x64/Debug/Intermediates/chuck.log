@@ -1,8 +1,9 @@
-﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(1091,5): warning MSB8027: Two or more files with the name of glad.c will produce outputs to the same location. This can lead to an incorrect build result.  The files involved are ..\CGL\glad.c, ..\host\glad\src\glad.c.
+﻿  Renderer.cpp
+C:\cygwin64\home\VR Design Lab\azaday-chuck\src\CGL\Renderer.cpp(29,2): warning C4267: 'argument': conversion from 'size_t' to 'unsigned int', possible loss of data
   chuck_window.cpp
 C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\shared\minwindef.h(130,1): warning C4005: 'APIENTRY': macro redefinition
 C:\cygwin64\home\VR Design Lab\azaday-chuck\src\host\glad\include\glad\glad.h(32): message : see previous definition of 'APIENTRY'
-glad.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/INCREMENTAL:NO' specification
-x64\Debug\Intermediates\glad.obj : warning LNK4042: object specified more than once; extras ignored
+  Generating Code...
+IndexBuffer.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/INCREMENTAL:NO' specification
      Creating library C:\cygwin64\home\VR Design Lab\azaday-chuck\src\visual-studio\x64\Debug\chuck.lib and object C:\cygwin64\home\VR Design Lab\azaday-chuck\src\visual-studio\x64\Debug\chuck.exp
   chuck.vcxproj -> C:\cygwin64\home\VR Design Lab\azaday-chuck\src\visual-studio\x64\Debug\chuck.exe

@@ -1,44 +1,6 @@
 #include "Geometry.h"
 
 /* =============================================================================
-									Base Geo
-===============================================================================*/
-// setup VAO given populated vbo, ebo etc
-void Geometry::BuildGeometry() {
-										 // set vao
-	VertexArray& va = GetArray();
-	va.Bind();
-
-	// set vbo
-	VertexBuffer& vb = GetBuffer();
-	vb.SetBuffer(
-		(void*)&m_Vertices[0],
-		m_Vertices.size() * sizeof(Vertex),  // size in bytes
-		m_Vertices.size(),  // num elements
-		GL_STATIC_DRAW  // probably static? the actual buffer geometry shouldn't be modified too much
-	);
-
-	// set attributes
-	auto& layout = GetLayout();
-	layout.Push("position", GL_FLOAT, 3, false);  //
-	layout.Push("normal", GL_FLOAT, 3, false);  // 
-	layout.Push("uv", GL_FLOAT, 2, false);  //
-
-											// set indices
-	IndexBuffer& ib = GetIndex();
-	ib.SetBuffer(
-		&m_Indices[0],
-		3 * m_Indices.size(),   // x3 because each index has 3 ints
-		GL_STATIC_DRAW
-	);
-
-	// add to VAO
-	va.AddBufferAndLayout(vb, layout);  // add vertex attrib pointers to VAO state
-	va.AddIndexBuffer(ib);  // add index buffer to VAO 
-}
-
-
-/* =============================================================================
 									Sphere Geo
 ===============================================================================*/
 
@@ -115,8 +77,8 @@ m_ThetaStart(thetaStart), m_ThetaLength(thetaLength)
 		}
 	}
 
-	// setup vao
-	BuildGeometry();
+	// setup vao (no don't do this by default!!)
+	// BuildGeometry();
 }
 
 /* =============================================================================
@@ -140,7 +102,7 @@ m_WidthSeg(widthSeg), m_HeightSeg(heightSeg), m_DepthSeg(depthSeg)
 	buildPlane('x', 'y', 'z', 1, -1, width, height, depth, m_WidthSeg, m_HeightSeg, 4); // pz
 	buildPlane('x', 'y', 'z', -1, -1, width, height, -depth, m_WidthSeg, m_HeightSeg, 5); // nz
 
-	BuildGeometry();
+	// BuildGeometry();
 }
 
 void BoxGeometry::buildPlane(char u, char v, char w, int udir, int vdir, float width, float height, float depth, int gridX, int gridY, int materialIndex) {

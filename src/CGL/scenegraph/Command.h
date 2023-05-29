@@ -21,17 +21,10 @@ public:
 //==================== Creation Commands =====a==================//
 // TODO: all this creation command logic can be moved into the classes themselves
 // add a virtual Clone() = 0 to base class SceneGraphNode
-    // Scene scene;
-    // SphereGeometry sphereGeo;
-    // NormalMaterial normMat;
-    // Group sunSystem, earthSystem, moonSystem;
 
-    // earthSystem.SetPosition(glm::vec3(2.2f, 0.0f, 0.0f));
-    // moonSystem.SetPosition(.55f, 0.0f, 0.0f);
-    // Mesh sun(&boxGeo, &normMat);
-	// sun.SetScale(glm::vec3(2.0f));
-    // scene.AddChild(&sunSystem);
-    // camera.SetPosition(0.0, 0.0, 3.0);
+// TODO: should use observer pattern here, create hooks for all
+// creation commands that the renderer can listen to in order to
+// setup GPU-side data 
 
 class CreateMaterialCommand : public SceneGraphCommand
 {
@@ -57,6 +50,11 @@ public:
     CreateGeometryCommand(Geometry* geo) : geo(geo) {};
     virtual void execute(Scene* scene) override {
         Geometry* newGeo = geo->Clone();
+
+        // assign the gpu buffer data
+        // JK we do this in renderer instead
+        // newGeo->BuildGeometry();
+
         newGeo->SetID(geo->GetID());  // copy ID
         std::cout << "copied geometry with id: " + std::to_string(newGeo->GetID())
             << std::endl;
