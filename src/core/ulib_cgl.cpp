@@ -91,6 +91,13 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->add_mfun(QUERY, cgl_obj_set_scale, "CglObject", "SetScale");  
 	QUERY->add_arg(QUERY, "vec3", "scale");
 
+
+	// scenegraph relationship methods ===========
+	QUERY->add_mfun(QUERY, cgl_obj_add_child, "void", "AddChild");  
+	QUERY->add_arg(QUERY, "CglObject", "child");
+
+
+
 	cglobject_data_offset = QUERY->add_mvar(QUERY, "int", "@cglobject_data", false);
 	std::cout << "cglobject_data_offset: " << cglobject_data_offset << "\n";
 	QUERY->end_class(QUERY);
@@ -136,7 +143,7 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->add_ctor(QUERY, cgl_mat_ctor);
 	QUERY->add_dtor(QUERY, cgl_mat_dtor);
 
-	QUERY->add_mfun(QUERY, cgl_mat_set_wireframe, "void", "wireframe");
+	QUERY->add_mfun(QUERY, cgl_mat_set_wireframe, "int", "wireframe");
 	QUERY->add_arg(QUERY, "int", "wf");
 
 	QUERY->add_mfun(QUERY, cgl_mat_get_wireframe, "int", "wireframe");
@@ -163,6 +170,12 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->add_arg(QUERY, "CGLgeo", "geo");
 	QUERY->add_arg(QUERY, "CGLmat", "mat");
 
+	QUERY->end_class(QUERY);
+
+	// CGL Group
+	QUERY->begin_class(QUERY, "CglGroup", "CglObject");
+	QUERY->add_ctor(QUERY, cgl_group_ctor);
+	QUERY->add_dtor(QUERY, cgl_group_dtor);
 	QUERY->end_class(QUERY);
 	
 
@@ -419,6 +432,17 @@ CK_DLL_MFUN(cgl_obj_get_scale)
 	RETURN->v_vec3 = { vec.x, vec.y, vec.z };
 }
 
+CK_DLL_MFUN(cgl_obj_add_child)
+{
+	SceneGraphObject* cglObj = (SceneGraphObject*) OBJ_MEMBER_INT (SELF, cglobject_data_offset);
+	Chuck_Object* child_obj = GET_NEXT_OBJECT(ARGS);
+	SceneGraphObject* child = (SceneGraphObject*) OBJ_MEMBER_INT (child_obj, cglobject_data_offset);
+	cglObj->AddChild(child);
+
+	// command
+	CGL::PushCommand(new AddChildCommand(cglObj, child));
+}
+
 // CGL Camera =======================
 
 CK_DLL_CTOR(cgl_cam_ctor)
@@ -456,8 +480,11 @@ CK_DLL_DTOR(cgl_scene_dtor)
 // CGL Scene ==============================================
 CK_DLL_CTOR(cgl_mesh_ctor)
 {
-	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = (t_CKINT) &CGL::mainScene;
+	Mesh* mesh = new Mesh();
+	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = (t_CKINT) mesh;
+	CGL::PushCommand(new CreateMeshCommand(mesh));
 }
+
 CK_DLL_DTOR(cgl_mesh_dtor)
 {
 	Mesh* mesh = (Mesh*)OBJ_MEMBER_INT(SELF, cglobject_data_offset);
@@ -470,11 +497,36 @@ CK_DLL_DTOR(cgl_mesh_dtor)
 CK_DLL_MFUN(cgl_mesh_set)
 {
 	Mesh* mesh = (Mesh*)OBJ_MEMBER_INT(SELF, cglobject_data_offset);
-    Geometry * geo = (Geometry *)GET_NEXT_OBJECT(ARGS);
-    Material * mat = (Material *)GET_NEXT_OBJECT(ARGS);
+    //Geometry * geo = (Geometry *)GET_NEXT_OBJECT(ARGS);
+    //Material * mat = (Material *)GET_NEXT_OBJECT(ARGS);
+    Chuck_Object* geo_obj = GET_NEXT_OBJECT(ARGS);
+    Chuck_Object* mat_obj = GET_NEXT_OBJECT(ARGS); 
+    Geometry* geo = (Geometry *)OBJ_MEMBER_INT( geo_obj, cglgeo_data_offset );
+    Material* mat = (Material *)OBJ_MEMBER_INT( mat_obj, cglmat_data_offset);
+	
+	// set on CGL side
 	mesh->SetGeometry(geo);
 	mesh->SetMaterial(mat);
+
+	// command queue to update renderer side
 	CGL::PushCommand(new SetMeshCommand(mesh));
+}
+
+// CGL Group 
+CK_DLL_CTOR(cgl_group_ctor)
+{
+	Group* group = new Group;
+	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = (t_CKINT) group;
+	CGL::PushCommand(new CreateGroupCommand(group));
+}
+
+CK_DLL_DTOR(cgl_group_dtor)
+{
+	Group* group = (Group*)OBJ_MEMBER_INT(SELF, cglobject_data_offset);
+	SAFE_DELETE(group);
+	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = 0;  // zero out the memory
+
+	// TODO: need to remove from scenegraph
 }
 
 // CGL Geometry =======================
@@ -540,12 +592,16 @@ CK_DLL_MFUN(cgl_mat_set_wireframe)
 	t_CKINT wf = GET_NEXT_INT(ARGS);
 	mat->SetWireFrame(wf);
 	RETURN->v_int = wf ? 1 : 0;
+
+	// TODO: need to add command for this
 }
 
 CK_DLL_MFUN(cgl_mat_get_wireframe)
 {
 	Material* mat = (Material*) OBJ_MEMBER_INT (SELF, cglmat_data_offset);
 	RETURN->v_int = mat->GetWireFrame() ? 1 : 0;
+
+	// TODO: add command for this
 }
 
 CK_DLL_CTOR(cgl_mat_norm_ctor)

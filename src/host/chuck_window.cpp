@@ -220,9 +220,9 @@ void Window::DisplayLoop()
             sunSystem.SetRotation(glm::vec3(0.0f, .5f * currentTime, 0.0f));
             earthSystem.SetRotation(glm::vec3(0.0f, .7f * currentTime, 0.0f));
 
-            sun.SetRotation(glm::vec3(0.0f, .1f * currentTime, 0.0f));
-            earth.SetRotation(glm::vec3(0.0f, .4f * currentTime, 0.0f));
-            moon.SetRotation(glm::vec3(0.0f, .9f * currentTime, 0.0f));
+            // sun.SetRotation(glm::vec3(0.0f, .1f * currentTime, 0.0f));
+            // earth.SetRotation(glm::vec3(0.0f, .4f * currentTime, 0.0f));
+            // moon.SetRotation(glm::vec3(0.0f, .9f * currentTime, 0.0f));
         }
 
         // camera.SetPosition(CGL::mainCamera.GetPosition());

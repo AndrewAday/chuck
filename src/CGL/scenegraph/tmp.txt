@@ -1,0 +1,37 @@
+cwd: C:\cygwin64\home\VR Design Lab\azaday-chuck\src\visual-studio
+created node with id: 2
+created node with id: 3
+created node with id: 4
+calling boxgeo constructor
+created node with id: 5
+created node with id: 6
+created node with id: 7
+created node with id: 8
+created node with id: 9
+created node with id: 10
+created node with id: 11
+cgl_geo_ctor
+cgl_sphere_ctor
+created node with id: 12
+finished initializing spheregeo
+cgl_geo_ctor
+cgl_box_ctor
+created node with id: 13
+calling boxgeo constructor
+finished initializing boxgeo
+cgl_mat_ctor
+cgl_mat_norm_ctorcreated node with id: 14
+finished initializing norm material
+created node with id: 15
+created node with id: 16
+created node with id: 17
+created node with id: 18
+copied geometry with id: 12
+created node with id: 19
+calling boxgeo constructor
+copied geometry with id: 13
+created node with id: 20
+copied material with id: 14
+created node with id: 21
+copied mesh with id: 16
+

@@ -57,6 +57,8 @@ CK_DLL_MFUN(cgl_obj_get_pos);
 CK_DLL_MFUN(cgl_obj_get_rot);
 CK_DLL_MFUN(cgl_obj_get_scale);
 
+CK_DLL_MFUN(cgl_obj_add_child);
+
 // CGL Camera
 CK_DLL_CTOR(cgl_cam_ctor);
 CK_DLL_DTOR(cgl_cam_dtor);
@@ -87,6 +89,10 @@ CK_DLL_DTOR(cgl_mesh_dtor);
 // CK_DLL_MFUN(cgl_mesh_set_geo);
 // CK_DLL_MFUN(cgl_mesh_set_mat);
 CK_DLL_MFUN(cgl_mesh_set);
+
+// Groups
+CK_DLL_CTOR(cgl_group_ctor);
+CK_DLL_DTOR(cgl_group_dtor);
 
 
 // class definitions ===============================
@@ -161,7 +167,7 @@ public: // command queue methods
 		// get the new read queue
 		std::vector<SceneGraphCommand*>& readQueue = GetReadCommandQueue();\
 		
-		// std::cout << "flushing " + std::to_string(readQueue.size()) + " commands\n";
+		std::cout << "flushing " + std::to_string(readQueue.size()) + " commands\n";
 
 		// execute all commands in the read queue
 		for (auto& cmd : readQueue) {

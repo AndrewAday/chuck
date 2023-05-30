@@ -1,14 +1,36 @@
+// initialize geos
 SphereGeo sphereGeo;
 BoxGeo boxGeo;
-NormMat normMaterial;
-CglMesh boxMesh;
+// init materials
+NormMat normMat;
 
-// testing
-normMaterial.local(1);
-normMaterial.local(0);
+// scene setup
+CglScene scene;
+CglGroup sunSystem, earthSystem, moonSystem;
+CglMesh  sun, earth, moon;
 
+sun.set(boxGeo, normMat); 
+earth.set(boxGeo, normMat);
+moon.set(boxGeo, normMat);
 
-// =================================== testing
+earthSystem.SetPosition(@(2.2, 0.0, 0.0));
+moonSystem.SetPosition(@(.55, 0.0, 0.0));
+
+sun.SetScale(@(2.0, 2.0, 2.0));
+earth.SetScale(@(0.4, 0.4, 0.4));
+moon.SetScale(@(0.12, 0.12, 0.12));
+
+// create graph
+scene.AddChild(sunSystem);
+
+sunSystem.AddChild(sun);
+sunSystem.AddChild(earthSystem);
+
+earthSystem.AddChild(earth);
+earthSystem.AddChild(moonSystem);
+
+moonSystem.AddChild(moon);
+
 
 InputManager IM;
 spork ~ IM.start(0);
@@ -22,6 +44,19 @@ CglCamera mainCamera;
 0 => int frameCounter;
 1 => int autoRender;
 now => time lastTime;
+
+mainCamera.SetPosition(@(0.0, 0.0, 3.0));
+
+fun void Update(time t, dur dt) 
+{
+	t / second => float ftime;
+}
+
+fun void FreeUpdate() {
+	while (10::ms => now) {
+	}
+} 
+// spork ~ FreeUpdate();
 
 // flycamera controls
 @(0.0, 1.0, 0.0) => vec3 UP;
@@ -93,6 +128,7 @@ fun void GameLoop(){
 
 		// Update logic
 		cameraUpdate(now, deltaTime);
+		// Update(now, deltaTime);
 
 		// End update, begin render
 		if (autoRender) { CGL.Render(); } // tell renderer its safe to copy and draw

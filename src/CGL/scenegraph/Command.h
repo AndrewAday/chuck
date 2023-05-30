@@ -87,7 +87,9 @@ private:
 class CreateMeshCommand : public SceneGraphCommand
 {
 public:
-    CreateMeshCommand(Mesh* mesh) : mesh(mesh) {};
+    CreateMeshCommand(Mesh* mesh) : mesh(mesh) {
+
+    };
     virtual void execute(Scene* scene) override {
         // Get the cloned material and geometry
         Material* clonedMat = nullptr;
