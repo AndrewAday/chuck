@@ -61,11 +61,33 @@ CK_DLL_MFUN(cgl_obj_get_scale);
 CK_DLL_CTOR(cgl_cam_ctor);
 CK_DLL_DTOR(cgl_cam_dtor);
 
+// CGL scene
+CK_DLL_CTOR(cgl_scene_ctor);
+CK_DLL_DTOR(cgl_scene_dtor);
+
 // CGL Geometry
 CK_DLL_CTOR(cgl_geo_ctor);
 CK_DLL_DTOR(cgl_geo_dtor);
 CK_DLL_CTOR(cgl_geo_box_ctor);
 CK_DLL_CTOR(cgl_geo_sphere_ctor);
+
+// Materials
+CK_DLL_CTOR(cgl_mat_ctor);
+CK_DLL_DTOR(cgl_mat_dtor);
+CK_DLL_MFUN(cgl_mat_set_wireframe);
+CK_DLL_MFUN(cgl_mat_get_wireframe);
+
+CK_DLL_CTOR(cgl_mat_norm_ctor);
+CK_DLL_DTOR(cgl_mat_norm_dtor);
+CK_DLL_MFUN(cgl_set_use_local_normals);
+
+// Mesh
+CK_DLL_CTOR(cgl_mesh_ctor);
+CK_DLL_DTOR(cgl_mesh_dtor);
+// CK_DLL_MFUN(cgl_mesh_set_geo);
+// CK_DLL_MFUN(cgl_mesh_set_mat);
+CK_DLL_MFUN(cgl_mesh_set);
+
 
 // class definitions ===============================
 

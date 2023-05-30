@@ -195,5 +195,30 @@ private:
 // Set Mesh params (geometry and material)
 class SetMeshCommand : public SceneGraphCommand
 {
+public:
+    SetMeshCommand(Mesh* mesh) :
+        m_MeshID(mesh->GetID()), 
+        m_MatID(mesh->GetMaterial() ? mesh->GetMaterial()->GetID() : 0), 
+        m_GeoID(mesh->GetGeometry()->GetID())
+    {}
 
+    virtual void execute(Scene* scene) override {
+        Mesh* mesh = dynamic_cast<Mesh*>(scene->GetNode(m_MeshID));
+        Material* mat = dynamic_cast<Material*>(scene->GetNode(m_MatID));
+        Geometry* geo = dynamic_cast<Geometry*>(scene->GetNode(m_GeoID));
+
+        assert(mesh && geo);  // don't need to assert mat because we have default material
+
+        mesh->SetGeometry(geo);
+        mesh->SetMaterial(mat);
+    }
+
+
+private:  
+    // store IDs, not pointers, because we want to point to the renderer's copy
+    // not the original.
+    // Also not safe to read from the original during command queue flush
+    // because it may be being written to by chuck side
+    // TODO: need to do this for all the other commands .... :(
+    size_t m_MeshID, m_MatID, m_GeoID;
 };

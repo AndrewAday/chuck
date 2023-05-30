@@ -8,6 +8,7 @@ class Mesh : public SceneGraphObject
 {
 public:
 	Mesh(Geometry *geo, Material* mat) : m_Geometry(geo), m_Material(mat) {}
+	Mesh() : m_Geometry(nullptr), m_Material(nullptr) {}
 	virtual bool IsMesh() override { return true; }
 
 	inline Geometry* GetGeometry() { return m_Geometry; }

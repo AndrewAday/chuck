@@ -27,7 +27,15 @@ public:
 		m_SceneGraphMap[node->GetID()] = node;
 	}
 
-	inline SceneGraphNode * GetNode(size_t id) { return m_SceneGraphMap[id]; }
+	bool CheckNode(size_t id) {
+		return m_SceneGraphMap.find(id) != m_SceneGraphMap.end();
+	}
+
+	SceneGraphNode * GetNode(size_t id) { 
+		if (CheckNode(id))
+			return m_SceneGraphMap[id]; 
+		return nullptr;
+	}
 
 
 private:  // attributes

@@ -21,6 +21,7 @@ class Material : public SceneGraphNode
 {
 public:
 	Material() : m_WireFrame(false), m_WireFrameLineWidth(1.0f) {};
+	virtual ~Material() {}
 
 	virtual MaterialType GetMaterialType() { return MaterialType::Base; }
 
@@ -30,6 +31,9 @@ public:
 	// e.g. specify a uniform name, value, and type maybe stored in a cpu-side buffer
 	virtual void SetLocalUniforms(Shader* shader) = 0;  // for setting properties specific to the material, e.g. color
 	virtual Material* Clone(bool copyID = true) = 0;
+
+	inline void SetWireFrame(bool wf) { m_WireFrame = wf; }
+	inline bool GetWireFrame() { return m_WireFrame; }
 
 private:
 	// TODO: wireframing

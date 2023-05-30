@@ -1,5 +1,14 @@
 SphereGeo sphereGeo;
 BoxGeo boxGeo;
+NormMat normMaterial;
+CglMesh boxMesh;
+
+// testing
+normMaterial.local(1);
+normMaterial.local(0);
+
+
+// =================================== testing
 
 InputManager IM;
 spork ~ IM.start(0);

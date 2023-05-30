@@ -105,6 +105,7 @@ public:
 	Shader* GetShader() { return m_Shader; }
 	std::string GetVertPath() { return m_Shader->GetVertPath(); }
 	std::string GetFragPath() { return m_Shader->GetFragPath(); }
+	Material* GetMat() { return m_Mat; }
 
 	// GPU side data
 	virtual void BindShader() { m_Shader->Bind(); }
@@ -147,6 +148,13 @@ public:
 
 		VertexArray& va = renderGeo->GetArray();
 		va.Bind();
+
+		// wireframe
+		if (renderMat->GetMat()->GetWireFrame()) {
+			GLCall(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+		} else {
+			GLCall(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+		}
 
 		if (va.GetIndexBuffer() == nullptr) {
 			GLCall(glDrawArrays(

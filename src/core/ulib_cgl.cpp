@@ -11,6 +11,7 @@ static t_CKUINT cglupdate_data_offset = 0;
 static t_CKUINT cglobject_data_offset = 0;
 static t_CKUINT cglcamera_data_offset = 0;
 static t_CKUINT cglgeo_data_offset = 0;
+static t_CKUINT cglmat_data_offset = 0;
 
 DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 {
@@ -91,14 +92,22 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->add_arg(QUERY, "vec3", "scale");
 
 	cglobject_data_offset = QUERY->add_mvar(QUERY, "int", "@cglobject_data", false);
+	std::cout << "cglobject_data_offset: " << cglobject_data_offset << "\n";
 	QUERY->end_class(QUERY);
 
 	// CGL camera
 	QUERY->begin_class(QUERY, "CglCamera", "CglObject");
 	QUERY->add_ctor(QUERY, cgl_cam_ctor);
 	QUERY->add_dtor(QUERY, cgl_cam_dtor);
-	//cglcamera_data_offset = QUERY->add_mvar(QUERY, "int", "@cglcamera_data", false);
+	// cglcamera_data_offset = QUERY->add_mvar(QUERY, "int", "@cglcamera_data", false);
 	QUERY->end_class(QUERY);
+
+	// CGL scene
+	QUERY->begin_class(QUERY, "CglScene", "CglObject");
+	QUERY->add_ctor(QUERY, cgl_scene_ctor);
+	QUERY->add_dtor(QUERY, cgl_scene_dtor);
+	QUERY->end_class(QUERY);
+
 
 	// CGL for global stuff ===============================
 	QUERY->begin_class(QUERY, "CGL", "Object");
@@ -109,7 +118,7 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->begin_class(QUERY, "CGLgeo", "Object");
 	QUERY->add_ctor(QUERY, cgl_geo_ctor);
 	QUERY->add_dtor(QUERY, cgl_geo_dtor);
-	cglgeo_data_offset = QUERY->add_mvar(QUERY, "int", "@cglgeo_data", false);
+	// cglgeo_data_offset = QUERY->add_mvar(QUERY, "int", "@cglgeo_data", false);
 	QUERY->end_class(QUERY);
 
 	QUERY->begin_class(QUERY, "BoxGeo", "CGLgeo");
@@ -121,6 +130,41 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->add_ctor(QUERY, cgl_geo_sphere_ctor);
 	QUERY->add_dtor(QUERY, cgl_geo_dtor);
 	QUERY->end_class(QUERY);
+
+	// Materials
+	QUERY->begin_class(QUERY, "CGLmat", "Object");
+	QUERY->add_ctor(QUERY, cgl_mat_ctor);
+	QUERY->add_dtor(QUERY, cgl_mat_dtor);
+
+	QUERY->add_mfun(QUERY, cgl_mat_set_wireframe, "void", "wireframe");
+	QUERY->add_arg(QUERY, "int", "wf");
+
+	QUERY->add_mfun(QUERY, cgl_mat_get_wireframe, "int", "wireframe");
+
+	cglmat_data_offset = QUERY->add_mvar(QUERY, "int", "@cglmat_data", false);
+	QUERY->end_class(QUERY);
+
+
+	QUERY->begin_class(QUERY, "NormMat", "CGLmat");
+	QUERY->add_ctor(QUERY, cgl_mat_norm_ctor);
+	QUERY->add_dtor(QUERY, cgl_mat_norm_dtor);
+
+	QUERY->add_mfun(QUERY, cgl_set_use_local_normals, "void", "local");
+	QUERY->add_arg(QUERY, "int", "use_locals");
+
+	QUERY->end_class(QUERY);
+
+	// CGL Mesh
+	QUERY->begin_class(QUERY, "CglMesh", "CglObject");
+	QUERY->add_ctor(QUERY, cgl_mesh_ctor);
+	QUERY->add_dtor(QUERY, cgl_mesh_dtor);
+	
+	QUERY->add_mfun(QUERY, cgl_mesh_set, "void", "set");
+	QUERY->add_arg(QUERY, "CGLgeo", "geo");
+	QUERY->add_arg(QUERY, "CGLmat", "mat");
+
+	QUERY->end_class(QUERY);
+	
 
 
 
@@ -253,6 +297,7 @@ CK_DLL_MFUN(cgl_obj_scale_by)
 	t_CKVEC3 vec = GET_NEXT_VEC3(ARGS);
 	cglObj->Scale(glm::vec3(vec.x, vec.y, vec.z));
 	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
 CK_DLL_MFUN(cgl_obj_rot_on_local_axis)
@@ -285,6 +330,7 @@ CK_DLL_MFUN(cgl_obj_rot_x)
 	t_CKFLOAT deg = GET_NEXT_FLOAT(ARGS);
 	cglObj->RotateX(deg);
 	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
 CK_DLL_MFUN(cgl_obj_rot_y)
@@ -293,6 +339,7 @@ CK_DLL_MFUN(cgl_obj_rot_y)
 	t_CKFLOAT deg = GET_NEXT_FLOAT(ARGS);
 	cglObj->RotateY(deg);
 	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
 CK_DLL_MFUN(cgl_obj_rot_z)
@@ -301,6 +348,7 @@ CK_DLL_MFUN(cgl_obj_rot_z)
 	t_CKFLOAT deg = GET_NEXT_FLOAT(ARGS);
 	cglObj->RotateZ(deg);
 	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
 CK_DLL_MFUN(cgl_obj_lookat_vec3)
@@ -309,6 +357,7 @@ CK_DLL_MFUN(cgl_obj_lookat_vec3)
 	t_CKVEC3 vec = GET_NEXT_VEC3(ARGS);
 	cglObj->LookAt(glm::vec3(vec.x, vec.y, vec.z));
 	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
 CK_DLL_MFUN(cgl_obj_lookat_float)
@@ -319,6 +368,7 @@ CK_DLL_MFUN(cgl_obj_lookat_float)
 	t_CKFLOAT z = GET_NEXT_FLOAT(ARGS);
 	cglObj->LookAt(glm::vec3(x, y, z));
 	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
 CK_DLL_MFUN(cgl_obj_set_pos)
@@ -327,6 +377,7 @@ CK_DLL_MFUN(cgl_obj_set_pos)
 	t_CKVEC3 vec = GET_NEXT_VEC3(ARGS);
 	cglObj->SetPosition(glm::vec3(vec.x, vec.y, vec.z));
 	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
 CK_DLL_MFUN(cgl_obj_set_rot)
@@ -335,6 +386,7 @@ CK_DLL_MFUN(cgl_obj_set_rot)
 	t_CKVEC3 vec = GET_NEXT_VEC3(ARGS);
 	cglObj->SetRotation(glm::vec3(vec.x, vec.y, vec.z));
 	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
 CK_DLL_MFUN(cgl_obj_set_scale)
@@ -343,6 +395,7 @@ CK_DLL_MFUN(cgl_obj_set_scale)
 	t_CKVEC3 vec = GET_NEXT_VEC3(ARGS);
 	cglObj->SetScale(glm::vec3(vec.x, vec.y, vec.z));
 	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
 CK_DLL_MFUN(cgl_obj_get_pos)
@@ -383,9 +436,45 @@ CK_DLL_DTOR(cgl_cam_dtor)
 	//// don't call delete! because this is a static var
 	//OBJ_MEMBER_INT(SELF, cglcamera_data_offset) = 0;  // zero out the memory
 
-	SceneGraphObject* mainCam = (SceneGraphObject*)OBJ_MEMBER_INT(SELF, cglobject_data_offset);
+	Camera* mainCam = (Camera*)OBJ_MEMBER_INT(SELF, cglobject_data_offset);
 	// don't call delete! because this is a static var
 	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = 0;  // zero out the memory
+}
+
+// CGL Scene ==============================================
+CK_DLL_CTOR(cgl_scene_ctor)
+{
+	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = (t_CKINT) &CGL::mainScene;
+}
+CK_DLL_DTOR(cgl_scene_dtor)
+{
+	Scene* mainScene = (Scene*)OBJ_MEMBER_INT(SELF, cglobject_data_offset);
+	// don't call delete! because this is a static var
+	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = 0;  // zero out the memory
+}
+
+// CGL Scene ==============================================
+CK_DLL_CTOR(cgl_mesh_ctor)
+{
+	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = (t_CKINT) &CGL::mainScene;
+}
+CK_DLL_DTOR(cgl_mesh_dtor)
+{
+	Mesh* mesh = (Mesh*)OBJ_MEMBER_INT(SELF, cglobject_data_offset);
+	SAFE_DELETE(mesh);
+	OBJ_MEMBER_INT(SELF, cglobject_data_offset) = 0;  // zero out the memory
+
+	// TODO: need to remove from scenegraph
+}
+
+CK_DLL_MFUN(cgl_mesh_set)
+{
+	Mesh* mesh = (Mesh*)OBJ_MEMBER_INT(SELF, cglobject_data_offset);
+    Geometry * geo = (Geometry *)GET_NEXT_OBJECT(ARGS);
+    Material * mat = (Material *)GET_NEXT_OBJECT(ARGS);
+	mesh->SetGeometry(geo);
+	mesh->SetMaterial(mat);
+	CGL::PushCommand(new SetMeshCommand(mesh));
 }
 
 // CGL Geometry =======================
@@ -400,21 +489,90 @@ CK_DLL_DTOR(cgl_geo_dtor)  // all geos can share this base destructor
 	Geometry* geo = (Geometry*)OBJ_MEMBER_INT(SELF, cglgeo_data_offset);
 	SAFE_DELETE(geo);
 	OBJ_MEMBER_INT(SELF, cglgeo_data_offset) = 0;  // zero out the memory
+
+	// TODO: trigger destruction callback and scenegraph removal command
 }
 
 CK_DLL_CTOR(cgl_geo_box_ctor)
 {
 	std::cerr << "cgl_box_ctor\n";
-	OBJ_MEMBER_INT(SELF, cglgeo_data_offset) = (t_CKINT) new BoxGeometry;
+	BoxGeometry* boxGeo = new BoxGeometry;
+	OBJ_MEMBER_INT(SELF, cglgeo_data_offset) = (t_CKINT) boxGeo;
 	std::cerr << "finished initializing boxgeo\n";
+
+	// Creation command
+	CGL::PushCommand(new CreateGeometryCommand(boxGeo));
 }
 
 CK_DLL_CTOR(cgl_geo_sphere_ctor)
 {
 	std::cerr << "cgl_sphere_ctor\n";
-	OBJ_MEMBER_INT(SELF, cglgeo_data_offset) = (t_CKINT) new SphereGeometry;
+	SphereGeometry* sphereGeo = new SphereGeometry;
+	OBJ_MEMBER_INT(SELF, cglgeo_data_offset) = (t_CKINT) sphereGeo;
 	std::cerr << "finished initializing spheregeo\n";
+
+	// Creation command
+	CGL::PushCommand(new CreateGeometryCommand(sphereGeo));
 }
+
+// CGL Materials ===================================================
+
+CK_DLL_CTOR(cgl_mat_ctor)
+{
+	std::cerr << "cgl_mat_ctor\n";
+	// dud, do nothing for now
+}
+
+CK_DLL_DTOR(cgl_mat_dtor)  // all geos can share this base destructor
+{
+	Material* mat = (Material*)OBJ_MEMBER_INT(SELF, cglmat_data_offset);
+	SAFE_DELETE(mat);
+	OBJ_MEMBER_INT(SELF, cglmat_data_offset) = 0;  // zero out the memory
+
+	// TODO: send destroy command to CGL command queue
+	//       - remove material from scenegraph
+	// 	     - callback hook for renderer to remove RenderMat from cache
+}
+
+CK_DLL_MFUN(cgl_mat_set_wireframe)
+{
+	Material* mat = (Material*) OBJ_MEMBER_INT (SELF, cglmat_data_offset);
+	t_CKINT wf = GET_NEXT_INT(ARGS);
+	mat->SetWireFrame(wf);
+	RETURN->v_int = wf ? 1 : 0;
+}
+
+CK_DLL_MFUN(cgl_mat_get_wireframe)
+{
+	Material* mat = (Material*) OBJ_MEMBER_INT (SELF, cglmat_data_offset);
+	RETURN->v_int = mat->GetWireFrame() ? 1 : 0;
+}
+
+CK_DLL_CTOR(cgl_mat_norm_ctor)
+{
+	std::cerr << "cgl_mat_norm_ctor";
+	NormalMaterial* normMat = new NormalMaterial;
+	OBJ_MEMBER_INT(SELF, cglmat_data_offset) = (t_CKINT) normMat;
+	std::cerr << "finished initializing norm material\n";
+
+	// Creation command
+	CGL::PushCommand(new CreateMaterialCommand(normMat));
+}
+
+CK_DLL_DTOR(cgl_mat_norm_dtor)
+{
+	// TODO: implement
+}
+CK_DLL_MFUN(cgl_set_use_local_normals)
+{
+	NormalMaterial* mat = (NormalMaterial*) OBJ_MEMBER_INT (SELF, cglmat_data_offset);
+	t_CKINT use_local = GET_NEXT_INT(ARGS);
+	if (use_local)
+		mat->UseLocalNormals();
+	else
+		mat->UseWorldNormals();
+}
+
 
 
 // CglEvent ========================================

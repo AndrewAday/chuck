@@ -148,6 +148,7 @@ void Window::DisplayLoop()
     // SphereGeometry sphereGeo;
 
     NormalMaterial normMat;
+    normMat.SetWireFrame(true);
 
     Group sunSystem, earthSystem, moonSystem;
 
