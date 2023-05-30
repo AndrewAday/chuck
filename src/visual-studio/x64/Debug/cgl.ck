@@ -50,6 +50,13 @@ mainCamera.SetPosition(@(0.0, 0.0, 3.0));
 fun void Update(time t, dur dt) 
 {
 	t / second => float ftime;
+
+	sunSystem.SetRotation(@(0.0, .5 * ftime, 0.0));
+	earthSystem.SetRotation(@(0.0, .7 * ftime, 0.0));
+
+	sun.SetRotation(@(0.0, .1 * ftime, 0.0));
+	earth.SetRotation(@(0.0, .4 * ftime, 0.0));
+	moon.SetRotation(@(0.0, .9 * ftime, 0.0));
 }
 
 fun void FreeUpdate() {
@@ -128,7 +135,7 @@ fun void GameLoop(){
 
 		// Update logic
 		cameraUpdate(now, deltaTime);
-		// Update(now, deltaTime);
+		Update(now, deltaTime);
 
 		// End update, begin render
 		if (autoRender) { CGL.Render(); } // tell renderer its safe to copy and draw

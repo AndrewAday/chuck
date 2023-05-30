@@ -144,37 +144,6 @@ void Window::DisplayLoop()
 
     Scene scene;
 
-    BoxGeometry boxGeo;
-    // SphereGeometry sphereGeo;
-
-    NormalMaterial normMat;
-    normMat.SetWireFrame(true);
-
-    Group sunSystem, earthSystem, moonSystem;
-
-    earthSystem.SetPosition(glm::vec3(2.2f, 0.0f, 0.0f));
-    moonSystem.SetPosition(.55f, 0.0f, 0.0f);
-
-    Mesh sun(&boxGeo, nullptr);
-    sun.SetScale(glm::vec3(2.0f));
-
-    Mesh earth(&boxGeo, &normMat);
-    earth.SetScale(glm::vec3(0.4f));
-
-    Mesh moon(&boxGeo, &normMat);
-    moon.SetScale(glm::vec3(0.12f));
-
-    // create graph
-    scene.AddChild(&sunSystem);
-
-    sunSystem.AddChild(&sun);
-    sunSystem.AddChild(&earthSystem);
-
-    earthSystem.AddChild(&earth);
-    earthSystem.AddChild(&moonSystem);
-
-    moonSystem.AddChild(&moon);
-
     // Copy from CGL scenegraph ====================================    
     scene.SetID(CGL::mainScene.GetID());  // copy scene ID
     scene.RegisterNode(&scene);  // register itself
@@ -211,19 +180,6 @@ void Window::DisplayLoop()
         // TODO: will probably have to re-enable this
 
         // chuck done with writes, renderer is good to read from the scene graph!
-
-        {  // rotate the universe
-            float radius = 2.0f;
-            float posX = radius * glm::sin(currentTime);
-            float posY = radius * glm::cos(currentTime);
-
-            sunSystem.SetRotation(glm::vec3(0.0f, .5f * currentTime, 0.0f));
-            earthSystem.SetRotation(glm::vec3(0.0f, .7f * currentTime, 0.0f));
-
-            // sun.SetRotation(glm::vec3(0.0f, .1f * currentTime, 0.0f));
-            // earth.SetRotation(glm::vec3(0.0f, .4f * currentTime, 0.0f));
-            // moon.SetRotation(glm::vec3(0.0f, .9f * currentTime, 0.0f));
-        }
 
         // camera.SetPosition(CGL::mainCamera.GetPosition());
         // camera.SetRotation(CGL::mainCamera.GetRotation());

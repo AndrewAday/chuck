@@ -167,7 +167,7 @@ public: // command queue methods
 		// get the new read queue
 		std::vector<SceneGraphCommand*>& readQueue = GetReadCommandQueue();\
 		
-		std::cout << "flushing " + std::to_string(readQueue.size()) + " commands\n";
+		// std::cout << "flushing " + std::to_string(readQueue.size()) + " commands\n";
 
 		// execute all commands in the read queue
 		for (auto& cmd : readQueue) {
