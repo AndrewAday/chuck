@@ -14,6 +14,8 @@ class Globals {
 
 	// inputs
 	-1 => static int snakeInput;
+	Segment @ food;
+	Grid @ grid;
 
 } Globals G;
 
@@ -24,6 +26,10 @@ class Globals {
 @(-1.0, 0.0, 0.0) => vec3 LEFT;
 @(0.0, 0.0, -1.0) => vec3 FORWARD;  // openGL uses right-handed sytem
 @(0.0, 0.0, 1.0) => vec3 BACK;
+
+fun string VecToString(vec3 v) {
+	return v.x + "," + v.y + "," + v.z;
+}
 
 
 // Resource Initialization ==================================================
@@ -47,51 +53,6 @@ class Component {
 
 }
 
-
-
-class Grid {
-    10 => int h;
-    10 => int w;
-    10 => int d;
-
-    int minX, minY, minZ, maxX, maxY, maxZ;
-
-	CglMesh gridMesh;
-	BoxGeo gridGeo;
-
-	NormMat gridMat;
-	gridMat.wireframe(true);
-
-    fun void Constructor(
-		int height, int width, int depth,
-		CglScene@ scene
-	) {
-		height => this.h;
-		width => this.w;
-		depth => this.d;
-
-		-w / 2 => minX; w / 2 => maxX;
-		-h / 2 => minY; h / 2 => maxY;
-		-d / 2 => minZ; d / 2 => maxZ;
-
-		gridGeo.set(
-			height * 1.0, width * 1.0, depth * 1.0,
-			height, width, depth 
-		);
-		gridMesh.set(gridGeo, gridMat);
-		scene.AddChild(gridMesh);
-    }
-
-	// returns whether point is inside grid
-    fun int Inside(vec3 pos) {
-		return (
-			pos.x >= minX && pos.x <= maxX &&
-			pos.y >= minY && pos.y <= maxY &&
-			pos.z >= minZ && pos.z <= maxZ
-		);
-    }
-}
-
 // linked list for snake body
 class Segment {
 
@@ -102,6 +63,21 @@ class Segment {
 	fun void Constructor(CglGeo @ geo, CglMat @ mat) {
 		// create mesh
 		mesh.set(geo, mat);
+	}
+
+	fun int PartOfSnake() {
+		return next != null;
+	}
+
+	fun static Segment @ Create(
+		CglGeo @ geo, 
+		CglMat @ mat,
+		vec3 pos
+	) {
+		Segment seg;
+		seg.Constructor(geo, mat);
+		seg.SetPos(pos);
+		return seg;
 	}
 
 	fun Segment @ GetNext() {
@@ -125,16 +101,106 @@ class Segment {
 	fun int Inside(vec3 point) {
 		GetPos() => vec3 pos;
 		<<< "is ", point, "inside seg at", pos >>>;
-		(pos-point) => vec3 diff;
-		if (diff.magnitude() < .1)
-		{
-			<<< "yes!" >>>;
-			return true;
-		}
-		<<< "no!" >>>;
-		return false;
+		return (
+			Math.fabs(point.x - pos.x) <= .5
+			&& Math.fabs(point.y - pos.y) <= .5
+			&& Math.fabs(point.z - pos.z) <= .5
+		);
+		// (pos-point) => vec3 diff;
+		// if (diff.magnitude() < .1)
+		// {
+		// 	<<< "yes!" >>>;
+		// 	return true;
+		// }
+		// <<< "no!" >>>;
+		// return false;
 	} 
 }
+
+
+class Grid {
+    10 => int h;
+    10 => int w;
+    10 => int d;
+
+    int minX, minY, minZ, maxX, maxY, maxZ;
+
+	CglMesh gridMesh;
+	BoxGeo gridGeo;
+
+	NormMat gridMat;
+	gridMat.wireframe(true);
+
+	// hashset of each grid cell
+	vec3 emptyCells[];
+
+// int erase( string key );
+//     (map only) Erase all elements with the specified key.
+// int find( string key );
+//     (map only) Get number of elements with the specified key.
+// void getKeys( string[] keys );
+//     Return all keys found in associative array in keys
+
+	fun void SetCellEmpty(vec3 pos) {
+		pos => emptyCells[VecToString(pos)];
+	}
+
+	fun void SetCellFull(vec3 pos) {
+		emptyCells.erase(VecToString(pos));
+	}
+
+	fun int IsCellEmpty(vec3 pos) {
+		return emptyCells.find(VecToString(pos));
+	}
+
+	fun vec3 GetRandomEmptyCell() {
+		string keys[0];
+		emptyCells.getKeys(keys);
+		Math.random2(0, keys.size()-1) => int randIndex;
+		return emptyCells[keys[randIndex]];
+	}
+	
+    fun void Constructor(
+		int height, int width, int depth,
+		CglScene@ scene
+	) {
+		height => this.h;
+		width => this.w;
+		depth => this.d;
+
+		-w / 2 => minX; w / 2 => maxX;
+		-h / 2 => minY; h / 2 => maxY;
+		-d / 2 => minZ; d / 2 => maxZ;
+
+		gridGeo.set(
+			height * 1.0, width * 1.0, depth * 1.0,
+			height, width, depth 
+		);
+		gridMesh.set(gridGeo, gridMat);
+		scene.AddChild(gridMesh);
+
+		// populate empty cells
+		new vec3[0] @=> emptyCells;
+		for (minX => int i; i <= maxX; i++) {
+			for (minY => int j; j <= maxY; j++) {
+				for (minZ => int k; k <= maxZ; k++) {
+					@(i, j, k) => vec3 pos;
+					SetCellEmpty(pos);
+				}
+			}
+		}
+    }
+
+	// returns whether point is inside grid
+    fun int Contains(vec3 pos) {
+		return (
+			pos.x >= minX && pos.x <= maxX &&
+			pos.y >= minY && pos.y <= maxY &&
+			pos.z >= minZ && pos.z <= maxZ
+		);
+    }
+}
+
 
 class Snake {
 
@@ -206,6 +272,11 @@ class Snake {
         // update position
         seg.SetPos(pos);
 
+		AddSegment(seg);
+    }
+
+	// adds segment to head of snake
+	fun void AddSegment(Segment @ seg) {
 		// add to scene
 		snakeObj.AddChild(seg.mesh);
 
@@ -215,7 +286,7 @@ class Snake {
 		
 		// update head
 		SetHead(seg);
-    }
+	}
 
     // moves the snake by 1 step
     fun void Slither() {
@@ -227,14 +298,34 @@ class Snake {
 		// the tail and move it to the new head
 
 		curDir + head.GetPos() => vec3 newPos;
-		// set tail to new pos
-		tail.SetPos(newPos);
+		tail.GetPos() => vec3 oldPos;
 
 
-		// update new tail, head, and pointers
-		
-		SetHead(this.head.GetNext());
-		this.tail.GetNext() @=> this.tail;
+		if (G.grid.IsCellEmpty(newPos)) {
+
+			// set tail to new pos
+			tail.SetPos(newPos);
+
+			// update new tail, head, and pointers
+			SetHead(this.head.GetNext());
+			this.tail.GetNext() @=> this.tail;
+
+			// update emptycell set
+			G.grid.SetCellEmpty(oldPos);
+			G.grid.SetCellFull(newPos);
+			return;
+		} 
+
+		// collisions!
+
+		// case 1: collision with wall
+		if (!G.grid.Contains(newPos)) {
+			<<< "collision with wall" >>>;
+			return;
+		}
+
+		// case 2: collision with self
+		// case 3: collision with food
     }
 
 	// change snake direction according to input
@@ -290,10 +381,16 @@ snake.Constructor(boxGeo, normMat, scene);
 // testing
 Grid grid;
 grid.Constructor(21, 21, 21, scene);
+grid @=> G.grid;
+
+
+fun void SpawnSeg() {
+
+}
 
 
 fun void Movement() {
-	while (1::second => now) {
+	while (.1::second => now) {
 		snake.UpdateDir(G.snakeInput);
 		if (IM.isKeyDown(IM.KEY_SPACE))
 			snake.AddSegment(snake.head.GetPos() + snake.curDir);
