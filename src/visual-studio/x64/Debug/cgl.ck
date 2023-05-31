@@ -3,6 +3,7 @@ SphereGeo sphereGeo;
 BoxGeo boxGeo;
 // init materials
 NormMat normMat;
+normMat.useLocal(1);
 
 // scene setup
 CglScene scene;

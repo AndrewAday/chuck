@@ -206,8 +206,12 @@ public class InputManager
     0xfa => static int KEY_MEDIA_REFRESH; 
     0xfb => static int KEY_MEDIA_CALC; 
 
+    // state
+    -1 => int lastKeyPressed;
+
     // events
     Event keyDownEvents[0xff];
+    Event anyKeyDownEvent;
 
     // state vector
     int keyState[0xff];  // keycodes are 1byte, max size is 2^8 = 256
@@ -238,8 +242,10 @@ public class InputManager
             while( hi.recv( msg ) ) {
                 if( msg.isButtonDown() )
                 {
+                    msg.key => lastKeyPressed;
                     1 => keyState[msg.key];
                     keyDownEvents[msg.key].broadcast();
+                    anyKeyDownEvent.broadcast();
                 }
                 else  // button up
                 {
