@@ -54,6 +54,7 @@ glm::mat4 SceneGraphObject::GetWorldMatrix()
 // walks scene graph, gets world quaternion rotation
 glm::quat SceneGraphObject::GetWorldRotation()
 {
+	// TODO: is this bugged? does scale affect rotation??
 	if (m_Parent == nullptr)
 		return m_Rotation;
 
@@ -68,16 +69,19 @@ glm::quat SceneGraphObject::GetWorldRotation()
 
 glm::vec3 SceneGraphObject::GetWorldPosition()
 {
-	if (m_Parent == nullptr)
-		return m_Position;
 
-	auto* parentPtr = m_Parent;
-	glm::vec3 worldPos = m_Position;
-	while (parentPtr != nullptr) {
-		worldPos = parentPtr->GetPosition() + worldPos;
-		parentPtr = parentPtr->GetParent();  // walk up the graph
-	}
-	return worldPos;
+	return GetWorldMatrix() * glm::vec4(m_Position, 1.0);
+
+	//if (m_Parent == nullptr)
+	//	return m_Position;
+
+	//auto* parentPtr = m_Parent;
+	//glm::vec3 worldPos = m_Position;
+	//while (parentPtr != nullptr) {
+	//	worldPos = parentPtr->GetPosition() + worldPos;
+	//	parentPtr = parentPtr->GetParent();  // walk up the graph
+	//}
+	//return worldPos;
 }
 
 // get the forward direction in world space

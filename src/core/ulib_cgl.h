@@ -46,6 +46,9 @@ CK_DLL_MFUN(cgl_obj_rot_on_world_axis);
 CK_DLL_MFUN(cgl_obj_rot_x);
 CK_DLL_MFUN(cgl_obj_rot_y);
 CK_DLL_MFUN(cgl_obj_rot_z);
+CK_DLL_MFUN(cgl_obj_pos_x);
+CK_DLL_MFUN(cgl_obj_pos_y);
+CK_DLL_MFUN(cgl_obj_pos_z);
 CK_DLL_MFUN(cgl_obj_lookat_vec3);
 CK_DLL_MFUN(cgl_obj_lookat_float);
 
@@ -56,6 +59,8 @@ CK_DLL_MFUN(cgl_obj_set_scale);
 CK_DLL_MFUN(cgl_obj_get_pos);
 CK_DLL_MFUN(cgl_obj_get_rot);
 CK_DLL_MFUN(cgl_obj_get_scale);
+
+CK_DLL_MFUN(cgl_obj_get_world_pos);
 
 CK_DLL_MFUN(cgl_obj_add_child);
 
@@ -72,6 +77,8 @@ CK_DLL_CTOR(cgl_geo_ctor);
 CK_DLL_DTOR(cgl_geo_dtor);
 CK_DLL_CTOR(cgl_geo_box_ctor);
 CK_DLL_CTOR(cgl_geo_sphere_ctor);
+
+CK_DLL_MFUN(cgl_geo_box_mod);
 
 // Materials
 CK_DLL_CTOR(cgl_mat_ctor);

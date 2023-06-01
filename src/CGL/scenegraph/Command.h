@@ -224,3 +224,90 @@ private:
     // TODO: need to do this for all the other commands .... :(
     size_t m_MeshID, m_MatID, m_GeoID;
 };
+
+
+/*
+TODO: let this command be the example pattern for how to update any SceneGraphNode
+
+a material needs to define
+1. GenUpdate()  -- allocates the data for the copy
+2. ApplyUpdate() -- reads in the data and applies the changes
+
+This is necessary to prevent accessing the original material while executing
+the command, as we are outside the "critical region" and no-longer have gauranteed
+thread-safe read/write access
+*/
+class UpdateMaterialCommand : public SceneGraphCommand
+{
+public:
+    UpdateMaterialCommand(Material* mat) 
+        : m_MatData(mat->GenUpdate()), m_MatID(mat->GetID()) {
+        assert(mat->GetMaterialType() != MaterialType::Base);  // must be a concrete material
+    };
+    ~UpdateMaterialCommand() {
+        if (m_MatData) {
+            delete m_MatData;
+        }
+    }
+    virtual void execute(Scene* scene) override {
+        Material* mat = dynamic_cast<Material*>(scene->GetNode(m_MatID));
+        assert(mat);  
+        mat->ApplyUpdate(m_MatData);
+
+        std::cout << "updated material with id: " + std::to_string(mat->GetID()) 
+                  << std::endl;
+    }
+private:
+    void* m_MatData;
+    size_t m_MatID;
+};
+
+// this probably should go under UpdateMaterialCommand but don't have
+// time right now to figure out the inheritence stuff
+class UpdateWireframeCommand : public SceneGraphCommand
+{
+public:
+    UpdateWireframeCommand(Material* mat) 
+        : m_MatID(mat->GetID()),
+        m_Wireframe(mat->GetWireFrame()),
+        m_WireframeLineWidth(mat->GetWireFrameWidth())
+    {};
+    virtual void execute(Scene* scene) override {
+        Material* mat = dynamic_cast<Material*>(scene->GetNode(m_MatID));
+        assert(mat);  
+
+        mat->SetWireFrame(m_Wireframe);
+        mat->SetWireFrameWidth(m_WireframeLineWidth);
+
+        std::cout << "updated material wireframe with id: " + std::to_string(mat->GetID()) 
+                  << std::endl;
+    }
+private:
+    size_t m_MatID;
+    bool m_Wireframe;
+    float m_WireframeLineWidth;
+};
+
+class UpdateGeometryCommand : public SceneGraphCommand
+{
+public:
+    UpdateGeometryCommand(Geometry* geo)
+        : m_GeoData(geo->GenUpdate()), m_GeoID(geo->GetID()) {};
+    ~UpdateGeometryCommand() {
+        if (m_GeoData) {
+            delete m_GeoData;
+        }
+    }
+    virtual void execute(Scene* scene) override {
+        Geometry* geo = dynamic_cast<Geometry*>(scene->GetNode(m_GeoID));
+        assert(geo);
+        geo->ApplyUpdate(m_GeoData);
+
+        std::cout << "updated geometry with id: " + std::to_string(geo->GetID())
+            << std::endl;
+    }
+private:
+    void* m_GeoData;
+    size_t m_GeoID;
+};
+

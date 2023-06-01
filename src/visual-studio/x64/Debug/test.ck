@@ -59,6 +59,9 @@ arr.getKeys(keys);
 <<< @(1.0, 1.0, 2.0) >>>;
 
 
+adc => Gain g => dac;
+
+
 
 while (true) {
     // <<< drive.last() >>>;

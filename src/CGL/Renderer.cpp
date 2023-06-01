@@ -13,6 +13,10 @@
 // setup VAO given populated vbo, ebo etc
 void RenderGeometry::BuildGeometry() {
 										 // set vao
+	if (m_Geo->IsDirty()) {
+		m_Geo->BuildGeometry();
+	}
+
 	VertexArray& va = GetArray();
 	va.Bind();
 

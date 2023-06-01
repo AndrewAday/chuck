@@ -39,6 +39,7 @@ public:
 	~RenderGeometry() {}
 
     inline void Bind() { m_VA.Bind(); }  // bind the underlying geometry
+	inline bool IsDirty() { return m_Geo->IsDirty(); }
 	void BuildGeometry();
 
 
@@ -235,6 +236,11 @@ private:  // private methods
 
 		// lookup or create render geometry
 		RenderGeometry* renderGeo = GetOrCreateRenderGeo(geo);
+		// check dirty TODO should prob move this elsewhere
+		if (renderGeo->IsDirty()) {
+			std::cout << "rendergeo dirty, rebuilding\n";
+			renderGeo->BuildGeometry();
+		}
 
 		// lookup or create render material
 		RenderMaterial* renderMat = GetOrCreateRenderMat(mat);

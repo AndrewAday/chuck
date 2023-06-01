@@ -4,45 +4,55 @@
 									Sphere Geo
 ===============================================================================*/
 
-SphereGeometry::SphereGeometry(float radius, int widthSegments, int heightSegments, float phiStart, float phiLength, float thetaStart, float thetaLength) : m_Radius(radius), m_WidthSeg(widthSegments), m_HeightSeg(heightSegments),
+SphereGeometry::SphereGeometry(float radius, int widthSegments, int heightSegments, float phiStart, float phiLength, float thetaStart, float thetaLength) : 
+m_Radius(radius), m_WidthSeg(widthSegments), m_HeightSeg(heightSegments),
 m_PhiStart(phiStart), m_PhiLength(phiLength),
 m_ThetaStart(thetaStart), m_ThetaLength(thetaLength)
 {
+	BuildGeometry();
+}
+
+void SphereGeometry::BuildGeometry()
+{
+	m_Vertices.clear();
+	m_Indices.clear();
+	m_Dirty = false;
+
 	constexpr float pi = glm::pi<float>();
 	const float epsilon = .00001f; // tolerance
-	widthSegments = std::max(3, widthSegments);
-	heightSegments = std::max(2, heightSegments);
+	m_WidthSeg = std::max(3, m_WidthSeg);
+	m_HeightSeg = std::max(2, m_HeightSeg);
 
-	const float thetaEnd = std::min(thetaStart + thetaLength, pi);
+	const float thetaEnd = std::min(m_ThetaStart + m_ThetaLength, pi);
 
 	unsigned int index = 0;
 	std::vector<unsigned int> grid;
 
 
 	// generate vertices, normals and uvs
-	for (int iy = 0; iy <= heightSegments; iy++) {
+	for (int iy = 0; iy <= m_HeightSeg; iy++) {
 
-		const float v = (float)iy / (float)heightSegments;
+		const float v = (float)iy / (float)m_HeightSeg;
 
 		// special case for the poles
 		float uOffset = 0;
-		if (iy == 0 && glm::epsilonEqual(thetaStart, 0.0f, epsilon)) {
-			uOffset = 0.5f / widthSegments;
+		if (iy == 0 && glm::epsilonEqual(m_ThetaStart, 0.0f, epsilon)) {
+			uOffset = 0.5f / m_WidthSeg;
 		}
-		else if (iy == heightSegments && glm::epsilonEqual(thetaEnd, pi, epsilon)) {
-			uOffset = -0.5 / widthSegments;
+		else if (iy == m_HeightSeg&& glm::epsilonEqual(thetaEnd, pi, epsilon)) {
+			uOffset = -0.5 / m_WidthSeg;
 		}
 
-		for (int ix = 0; ix <= widthSegments; ix++) {
+		for (int ix = 0; ix <= m_WidthSeg; ix++) {
 
-			const float u = (float)ix / (float)widthSegments;
+			const float u = (float)ix / (float)m_WidthSeg;
 
 			Vertex vert;
 
 			// vertex
-			vert.Position.x = -radius * glm::cos(phiStart + u * phiLength) * glm::sin(thetaStart + v * thetaLength);
-			vert.Position.y = radius * glm::cos(thetaStart + v * thetaLength);
-			vert.Position.z = radius * glm::sin(phiStart + u * phiLength) * glm::sin(thetaStart + v * thetaLength);
+			vert.Position.x = -m_Radius * glm::cos(m_PhiStart + u * m_PhiLength) * glm::sin(m_ThetaStart + v * m_ThetaLength);
+			vert.Position.y = m_Radius * glm::cos(m_ThetaStart + v * m_ThetaLength);
+			vert.Position.z = m_Radius * glm::sin(m_PhiStart + u * m_PhiLength) * glm::sin(m_ThetaStart + v * m_ThetaLength);
 
 			// normal
 			vert.Normal = glm::normalize(vert.Position);
@@ -59,26 +69,24 @@ m_ThetaStart(thetaStart), m_ThetaLength(thetaLength)
 
 	// indices
 
-	const size_t rowSize = (size_t)widthSegments + 1;
-	for (size_t iy = 0; iy < heightSegments; iy++) {
-		for (size_t ix = 0; ix < widthSegments; ix++) {
+	const size_t rowSize = (size_t)m_WidthSeg+ 1;
+	for (size_t iy = 0; iy < m_HeightSeg; iy++) {
+		for (size_t ix = 0; ix < m_WidthSeg; ix++) {
 
 			const unsigned int a = grid[(iy * rowSize) + ix + 1];
 			const unsigned int b = grid[(iy * rowSize) + ix];
 			const unsigned int c = grid[(rowSize * (iy + 1)) + ix];
 			const unsigned int d = grid[rowSize * (iy + 1) + (ix + 1)];
 
-			if (iy != 0 || thetaStart > epsilon) {
+			if (iy != 0 || m_ThetaStart > epsilon) {
 				m_Indices.push_back({ a, b, d });
 			};
-			if (iy != (size_t)heightSegments - 1 || thetaEnd < pi - epsilon) {
+			if (iy != (size_t)m_HeightSeg- 1 || thetaEnd < pi - epsilon) {
 				m_Indices.push_back({ b, c, d });
 			};
 		}
 	}
 
-	// setup vao (no don't do this by default!!)
-	// BuildGeometry();
 }
 
 /* =============================================================================
@@ -89,20 +97,22 @@ BoxGeometry::BoxGeometry(float width, float height, float depth, int widthSeg, i
 m_WidthSeg(widthSeg), m_HeightSeg(heightSeg), m_DepthSeg(depthSeg)
 {
 	std::cout << "calling boxgeo constructor\n";
-	// buffers
+	BuildGeometry();
+}
 
-	// helper variables
-	// int groupStart = 0;
+void BoxGeometry::BuildGeometry()
+{
+	m_Vertices.clear(); 
+	m_Indices.clear();
 
-	// build each side of the box geometry
-	buildPlane('z', 'y', 'x', -1, -1, depth, height, width, m_DepthSeg, m_HeightSeg, 0); // px
-	buildPlane('z', 'y', 'x', 1, -1, depth, height, -width, m_DepthSeg, m_HeightSeg, 1); // nx
-	buildPlane('x', 'z', 'y', 1, 1, width, depth, height, m_WidthSeg, m_DepthSeg, 2); // py
-	buildPlane('x', 'z', 'y', 1, -1, width, depth, -height, m_WidthSeg, m_DepthSeg, 3); // ny
-	buildPlane('x', 'y', 'z', 1, -1, width, height, depth, m_WidthSeg, m_HeightSeg, 4); // pz
-	buildPlane('x', 'y', 'z', -1, -1, width, height, -depth, m_WidthSeg, m_HeightSeg, 5); // nz
+	buildPlane('z', 'y', 'x', -1, -1, m_Depth, m_Height, m_Width, m_DepthSeg, m_HeightSeg, 0); // px
+	buildPlane('z', 'y', 'x', 1, -1, m_Depth, m_Height, -m_Width, m_DepthSeg, m_HeightSeg, 1); // nx
+	buildPlane('x', 'z', 'y', 1, 1, m_Width, m_Depth, m_Height, m_WidthSeg, m_DepthSeg, 2); // py
+	buildPlane('x', 'z', 'y', 1, -1, m_Width, m_Depth, -m_Height, m_WidthSeg, m_DepthSeg, 3); // ny
+	buildPlane('x', 'y', 'z', 1, -1, m_Width, m_Height, m_Depth, m_WidthSeg, m_HeightSeg, 4); // pz
+	buildPlane('x', 'y', 'z', -1, -1, m_Width, m_Height, -m_Depth, m_WidthSeg, m_HeightSeg, 5); // nz
 
-	// BuildGeometry();
+	m_Dirty = false;
 }
 
 void BoxGeometry::buildPlane(char u, char v, char w, int udir, int vdir, float width, float height, float depth, int gridX, int gridY, int materialIndex) {

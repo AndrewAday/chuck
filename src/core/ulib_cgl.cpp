@@ -50,6 +50,8 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->add_mfun(QUERY, cgl_obj_get_rot, "vec3", "GetRotation");
 	QUERY->add_mfun(QUERY, cgl_obj_get_scale, "vec3", "GetScale");
 
+	QUERY->add_mfun(QUERY, cgl_obj_get_world_pos, "vec3", "GetWorldPosition");
+
 	// transform setters ===========
 	QUERY->add_mfun(QUERY, cgl_obj_translate_by, "CglObject", "TranslateBy");
 	QUERY->add_arg(QUERY, "vec3", "trans_vec");
@@ -73,6 +75,15 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 
 	QUERY->add_mfun(QUERY, cgl_obj_rot_z, "CglObject", "RotateZ");
 	QUERY->add_arg(QUERY, "float", "deg");
+
+	QUERY->add_mfun(QUERY, cgl_obj_pos_x, "CglObject", "PosX");
+	QUERY->add_arg(QUERY, "float", "pos");
+
+	QUERY->add_mfun(QUERY, cgl_obj_pos_y, "CglObject", "PosY");
+	QUERY->add_arg(QUERY, "float", "pos");
+
+	QUERY->add_mfun(QUERY, cgl_obj_pos_z, "CglObject", "PosZ");
+	QUERY->add_arg(QUERY, "float", "pos");
 
 	QUERY->add_mfun(QUERY, cgl_obj_lookat_vec3, "CglObject", "LookAt");
 	QUERY->add_arg(QUERY, "vec3", "pos");
@@ -122,24 +133,31 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->end_class(QUERY);
 
 	// geometry
-	QUERY->begin_class(QUERY, "CGLgeo", "Object");
+	QUERY->begin_class(QUERY, "CglGeo", "Object");
 	QUERY->add_ctor(QUERY, cgl_geo_ctor);
 	QUERY->add_dtor(QUERY, cgl_geo_dtor);
 	// cglgeo_data_offset = QUERY->add_mvar(QUERY, "int", "@cglgeo_data", false);
 	QUERY->end_class(QUERY);
 
-	QUERY->begin_class(QUERY, "BoxGeo", "CGLgeo");
+	QUERY->begin_class(QUERY, "BoxGeo", "CglGeo");
 	QUERY->add_ctor(QUERY, cgl_geo_box_ctor);
 	QUERY->add_dtor(QUERY, cgl_geo_dtor);
+	QUERY->add_mfun(QUERY, cgl_geo_box_mod, "void", "set");
+	QUERY->add_arg(QUERY, "float", "width");
+	QUERY->add_arg(QUERY, "float", "height");
+	QUERY->add_arg(QUERY, "float", "depth");
+	QUERY->add_arg(QUERY, "int", "widthSeg");
+	QUERY->add_arg(QUERY, "int", "heightSeg");
+	QUERY->add_arg(QUERY, "int", "depthSeg");
 	QUERY->end_class(QUERY);
 
-	QUERY->begin_class(QUERY, "SphereGeo", "CGLgeo");
+	QUERY->begin_class(QUERY, "SphereGeo", "CglGeo");
 	QUERY->add_ctor(QUERY, cgl_geo_sphere_ctor);
 	QUERY->add_dtor(QUERY, cgl_geo_dtor);
 	QUERY->end_class(QUERY);
 
 	// Materials
-	QUERY->begin_class(QUERY, "CGLmat", "Object");
+	QUERY->begin_class(QUERY, "CglMat", "Object");
 	QUERY->add_ctor(QUERY, cgl_mat_ctor);
 	QUERY->add_dtor(QUERY, cgl_mat_dtor);
 
@@ -152,12 +170,12 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->end_class(QUERY);
 
 
-	QUERY->begin_class(QUERY, "NormMat", "CGLmat");
+	QUERY->begin_class(QUERY, "NormMat", "CglMat");
 	QUERY->add_ctor(QUERY, cgl_mat_norm_ctor);
 	QUERY->add_dtor(QUERY, cgl_mat_norm_dtor);
 
-	QUERY->add_mfun(QUERY, cgl_set_use_local_normals, "void", "local");
-	QUERY->add_arg(QUERY, "int", "use_locals");
+	QUERY->add_mfun(QUERY, cgl_set_use_local_normals, "void", "useLocal");
+	QUERY->add_arg(QUERY, "int", "useLocal");
 
 	QUERY->end_class(QUERY);
 
@@ -167,8 +185,8 @@ DLL_QUERY cgl_query(Chuck_DL_Query* QUERY)
 	QUERY->add_dtor(QUERY, cgl_mesh_dtor);
 	
 	QUERY->add_mfun(QUERY, cgl_mesh_set, "void", "set");
-	QUERY->add_arg(QUERY, "CGLgeo", "geo");
-	QUERY->add_arg(QUERY, "CGLmat", "mat");
+	QUERY->add_arg(QUERY, "CglGeo", "geo");
+	QUERY->add_arg(QUERY, "CglMat", "mat");
 
 	QUERY->end_class(QUERY);
 
@@ -364,6 +382,39 @@ CK_DLL_MFUN(cgl_obj_rot_z)
 	CGL::PushCommand(new TransformCommand(cglObj));
 }
 
+CK_DLL_MFUN(cgl_obj_pos_x)
+{
+	SceneGraphObject* cglObj = (SceneGraphObject*) OBJ_MEMBER_INT (SELF, cglobject_data_offset);
+	t_CKFLOAT posX = GET_NEXT_FLOAT(ARGS);
+	glm::vec3 pos = cglObj->GetPosition();
+	pos.x = posX;
+	cglObj->SetPosition(pos);
+	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
+}
+
+CK_DLL_MFUN(cgl_obj_pos_y)
+{
+	SceneGraphObject* cglObj = (SceneGraphObject*) OBJ_MEMBER_INT (SELF, cglobject_data_offset);
+	t_CKFLOAT posY= GET_NEXT_FLOAT(ARGS);
+	glm::vec3 pos = cglObj->GetPosition();
+	pos.y = posY;
+	cglObj->SetPosition(pos);
+	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
+}
+
+CK_DLL_MFUN(cgl_obj_pos_z)
+{
+	SceneGraphObject* cglObj = (SceneGraphObject*) OBJ_MEMBER_INT (SELF, cglobject_data_offset);
+	t_CKFLOAT posZ = GET_NEXT_FLOAT(ARGS);
+	glm::vec3 pos = cglObj->GetPosition();
+	pos.z = posZ;
+	cglObj->SetPosition(pos);
+	RETURN->v_object = SELF;
+	CGL::PushCommand(new TransformCommand(cglObj));
+}
+
 CK_DLL_MFUN(cgl_obj_lookat_vec3)
 {
 	SceneGraphObject* cglObj = (SceneGraphObject*) OBJ_MEMBER_INT (SELF, cglobject_data_offset);
@@ -415,6 +466,13 @@ CK_DLL_MFUN(cgl_obj_get_pos)
 {
 	SceneGraphObject* cglObj = (SceneGraphObject*) OBJ_MEMBER_INT (SELF, cglobject_data_offset);
 	const auto& vec = cglObj->GetPosition();
+	RETURN->v_vec3 = { vec.x, vec.y, vec.z };
+}
+
+CK_DLL_MFUN(cgl_obj_get_world_pos)
+{
+	SceneGraphObject* cglObj = (SceneGraphObject*) OBJ_MEMBER_INT (SELF, cglobject_data_offset);
+	const auto& vec = cglObj->GetWorldPosition();
 	RETURN->v_vec3 = { vec.x, vec.y, vec.z };
 }
 
@@ -556,6 +614,20 @@ CK_DLL_CTOR(cgl_geo_box_ctor)
 	CGL::PushCommand(new CreateGeometryCommand(boxGeo));
 }
 
+CK_DLL_MFUN(cgl_geo_box_mod)
+{
+	BoxGeometry* geo = (BoxGeometry*)OBJ_MEMBER_INT(SELF, cglgeo_data_offset);
+	t_CKFLOAT width = GET_NEXT_FLOAT(ARGS);
+	t_CKFLOAT height = GET_NEXT_FLOAT(ARGS);
+	t_CKFLOAT depth = GET_NEXT_FLOAT(ARGS);
+	t_CKINT widthSeg = GET_NEXT_INT(ARGS);
+	t_CKINT heightSeg = GET_NEXT_INT(ARGS);
+	t_CKINT depthSeg = GET_NEXT_INT(ARGS);
+	geo->UpdateParams(width, height, depth, widthSeg, heightSeg, depthSeg);
+
+	CGL::PushCommand(new UpdateGeometryCommand(geo));
+}
+
 CK_DLL_CTOR(cgl_geo_sphere_ctor)
 {
 	std::cerr << "cgl_sphere_ctor\n";
@@ -594,14 +666,13 @@ CK_DLL_MFUN(cgl_mat_set_wireframe)
 	RETURN->v_int = wf ? 1 : 0;
 
 	// TODO: need to add command for this
+	CGL::PushCommand(new UpdateWireframeCommand(mat));
 }
 
 CK_DLL_MFUN(cgl_mat_get_wireframe)
 {
 	Material* mat = (Material*) OBJ_MEMBER_INT (SELF, cglmat_data_offset);
 	RETURN->v_int = mat->GetWireFrame() ? 1 : 0;
-
-	// TODO: add command for this
 }
 
 CK_DLL_CTOR(cgl_mat_norm_ctor)
@@ -627,6 +698,9 @@ CK_DLL_MFUN(cgl_set_use_local_normals)
 		mat->UseLocalNormals();
 	else
 		mat->UseWorldNormals();
+	// TODO: add command for this 
+
+	CGL::PushCommand(new UpdateMaterialCommand(mat));
 }
 
 
@@ -721,6 +795,7 @@ void CGL::WaitOnUpdateDone() {
 	std::unique_lock<std::mutex> lock(GameLoopLock);
 	renderCondition.wait(lock, []() { return shouldRender; });
 	CGL::shouldRender = false;  // set back to false
+	//CGL::shouldRender = true; 
 	// lock auto releases in destructor
 }
 

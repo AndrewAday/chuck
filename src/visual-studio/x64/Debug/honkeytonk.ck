@@ -10,6 +10,9 @@
 // to learn more about HnkyTonk, uncomment this:
 // HnkyTonk.apropos();
 
+// PAUSE HONKEY
+while (1::second => now) {}
+
 // ugens!
 HnkyTonk h[8];
 Pan2 p[8];

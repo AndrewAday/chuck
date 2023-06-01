@@ -6,7 +6,8 @@
 class Window
 {
 public:
-	Window(int viewWidth = 2400, int viewHeight = 1800);
+	// Window(int viewWidth = 2400, int viewHeight = 1800);
+	Window(int viewWidth = 3840, int viewHeight = 2160);
 	~Window();
 
 	void DisplayLoop();

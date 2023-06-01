@@ -68,7 +68,7 @@ void Window::SetViewSize(int width, int height)
     m_ViewHeight = height;
 }
 
-Window::Window(int viewWidth, int viewHeight) : m_ViewWidth(2400), m_ViewHeight(1800), m_DeltaTime(0.0f)
+Window::Window(int viewWidth, int viewHeight) : m_ViewWidth(viewWidth), m_ViewHeight(viewHeight), m_DeltaTime(0.0f)
 {
     // init and select openGL version ==========================
     glfwInit();

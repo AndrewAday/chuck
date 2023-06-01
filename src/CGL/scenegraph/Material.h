@@ -32,8 +32,15 @@ public:
 	virtual void SetLocalUniforms(Shader* shader) = 0;  // for setting properties specific to the material, e.g. color
 	virtual Material* Clone(bool copyID = true) = 0;
 
+	// these two commands are for telling a material how to update itself
+	// via an update command
+	virtual void * GenUpdate() = 0;
+	virtual void ApplyUpdate(void* data) = 0;
+
 	inline void SetWireFrame(bool wf) { m_WireFrame = wf; }
+	inline void SetWireFrameWidth(float width) { m_WireFrameLineWidth = width; }
 	inline bool GetWireFrame() { return m_WireFrame; }
+	inline float GetWireFrameWidth() { return m_WireFrameLineWidth; }
 
 private:
 	// TODO: wireframing
@@ -64,6 +71,13 @@ public:
 			normMat->UseWorldNormals();
 
 		return normMat;
+	}
+	virtual void * GenUpdate() override {
+		return new bool{ m_UseLocalNormals };
+	}
+	virtual void ApplyUpdate(void* data) override {
+		assert(data && "normal material update data is null!");
+		m_UseLocalNormals = *(bool*)data;
 	}
 	void UseLocalNormals() { m_UseLocalNormals = true; }
 	void UseWorldNormals() { m_UseLocalNormals = false; }

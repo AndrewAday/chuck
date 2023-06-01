@@ -31,6 +31,11 @@ fun string VecToString(vec3 v) {
 	return v.x + "," + v.y + "," + v.z;
 }
 
+fun int VecEquals(vec3 a, vec3 b) {
+	b - a => vec3 c;
+	return c.magnitude() < .01;
+}
+
 
 // Resource Initialization ==================================================
 
@@ -42,6 +47,9 @@ NormMat normMat;
 NormMat headNormMat;
 normMat.useLocal(true);  // use local space normals (so we can tell orientation)
 headNormMat.wireframe(true);
+
+NormMat wireframeNormMat;
+wireframeNormMat.wireframe(true);
 
 // ECS classes ==================================================
 
@@ -116,6 +124,49 @@ class Segment {
 		// return false;
 	} 
 }
+
+// class Laser {
+
+// 	// Geometry
+// 	CglMesh laserMesh;
+// 	BoxGeo laserGeo;
+
+
+
+
+// 	fun void Constructor(
+// 		vec3 dir, vec3 startPos, vec3 endPos,
+// 		vec3 rot,
+// 		int height, int width, 
+// 		CglScene @ scene
+// 	) {
+// 		CglMesh laserMesh;
+// 		laserGeo.set(
+// 			height * 1.0, width * 1.0, depth * 1.0,
+// 			height, width, depth 
+// 		)
+// 		laserMesh.set(
+// 			laserGeo, wireframeNormMat
+// 		);
+
+// 		height => this.h;
+// 		width => this.w;
+// 		depth => this.d;
+
+// 		-w / 2 => minX; w / 2 => maxX;
+// 		-h / 2 => minY; h / 2 => maxY;
+// 		-d / 2 => minZ; d / 2 => maxZ;
+
+// 		gridGeo.set(
+// 		);
+// 		gridMesh.set(gridGeo, gridMat);
+// 		scene.AddChild(gridMesh);
+
+
+// 		scene.AddChild(laserMesh);
+
+// 	}
+// }
 
 
 class Grid {
@@ -203,7 +254,7 @@ class Grid {
 
 
 class Snake {
-
+	CglScene @ scene;
     CglGeo @ geo;  // snake segment shape 
     CglMat @ mat;  // snake material
 
@@ -228,7 +279,8 @@ class Snake {
 			this.head.mesh.set(geo, mat);  // reset head material
 
 		seg @=> this.head;
-		seg.mesh.set(geo, headNormMat);  // set new head for debugging
+		// seg.mesh.set(geo, headNormMat);  // set new head for debugging
+		seg.mesh.set(geo, mat);  // set new head for debugging
 	}
 
 	// fun void SetTail(Segment @ seg) {
@@ -248,6 +300,7 @@ class Snake {
 	) {
         snakeGeo @=> this.geo;
         snakeMat @=> this.mat;
+		scene @=> this.scene;
 
 		// add to scene
 		scene.AddChild(snakeObj);
@@ -262,6 +315,9 @@ class Snake {
 
 		// add to scene
 		snakeObj.AddChild(seg.mesh);
+
+		// spawn food
+		SpawnFood();
     }
 
     // add new segment to head at position pos
@@ -271,6 +327,9 @@ class Snake {
 
         // update position
         seg.SetPos(pos);
+
+		// update grid state
+		G.grid.SetCellFull(pos);
 
 		AddSegment(seg);
     }
@@ -288,6 +347,18 @@ class Snake {
 		SetHead(seg);
 	}
 
+	// spawn a food!
+	fun void SpawnFood() {
+		G.grid.GetRandomEmptyCell() => vec3 pos;
+		Segment.Create(sphereGeo, normMat, pos) @=> Segment @ food;
+
+		// update state
+		G.grid.SetCellFull(pos);
+		food @=> G.food;
+
+		scene.AddChild(food.mesh);
+	}
+
     // moves the snake by 1 step
     fun void Slither() {
 		<<< "Slither" >>>;
@@ -301,6 +372,7 @@ class Snake {
 		tail.GetPos() => vec3 oldPos;
 
 
+		// slither onwards if no collisions
 		if (G.grid.IsCellEmpty(newPos)) {
 
 			// set tail to new pos
@@ -324,8 +396,27 @@ class Snake {
 			return;
 		}
 
-		// case 2: collision with self
-		// case 3: collision with food
+		// case 2: collision with food
+		else if (
+			G.food != null &&
+			VecEquals(newPos, G.food.GetPos())
+		) {
+			<<< "collision with food" >>>;
+			// add new segment to head
+			AddSegment(G.food);
+			null @=> G.food;
+
+			G.grid.SetCellFull(newPos);
+
+			// spawn new food
+			SpawnFood();
+			return;
+		} 
+		
+		// case 3: collision with self
+		else {
+			<<< "collision with self" >>>;
+		}
     }
 
 	// change snake direction according to input
@@ -375,22 +466,19 @@ CglFrame FrameEvent;
 CglCamera mainCamera; 
 CglScene scene;
 
-Snake snake;
-snake.Constructor(boxGeo, normMat, scene);
-
-// testing
 Grid grid;
 grid.Constructor(21, 21, 21, scene);
 grid @=> G.grid;
 
+Snake snake;
+snake.Constructor(boxGeo, normMat, scene);
 
-fun void SpawnSeg() {
 
-}
+
 
 
 fun void Movement() {
-	while (.1::second => now) {
+	while (.5::second => now) {
 		snake.UpdateDir(G.snakeInput);
 		if (IM.isKeyDown(IM.KEY_SPACE))
 			snake.AddSegment(snake.head.GetPos() + snake.curDir);
@@ -410,6 +498,7 @@ fun void SnakeInputHandler() {
 		else if (IM.isKeyDown(IM.KEY_RIGHT)) { Snake.SNAKE_RIGHT => G.snakeInput; }
 	}
 }
+
 spork ~ SnakeInputHandler();
 
 // barf...
@@ -475,6 +564,7 @@ fun void GameLoop(){
 	CGL.Render(); // kick of the renderer
 	while (true) {
 		UpdateEvent => now;
+		<<< "==== update loop " >>>;
 		1 +=> G.frameCounter;
 		
 		// compute timing
