@@ -1,3 +1,8 @@
+/*
+solar system example
+tests scenegraph parent/child relations + local vs global transforms + rotation
+*/
+
 // initialize geos
 SphereGeo sphereGeo;
 BoxGeo boxGeo;

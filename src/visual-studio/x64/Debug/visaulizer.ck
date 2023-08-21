@@ -1,3 +1,4 @@
+// Example of using CGL to visualize waveform and spectrum
 
 // Managers ========================================================
 InputManager IM;
@@ -12,6 +13,8 @@ class Globals {
 	0 => static int frameCounter;
 	now => static time lastTime;
 	0::samp => static dur deltaTime;
+    second / samp => float srate;
+
 
 } Globals G;
 
@@ -34,62 +37,78 @@ fun int VecEquals(vec3 a, vec3 b) {
 }
 
 // chuck ugen setup
-512 => int WAVEFORM_LENGTH;
+// 512 => int WAVEFORM_LENGTH;
+256 => int WAVEFORM_LENGTH;
 
 adc => Gain g => dac;
-float waveformThis[WAVEFORM_LENGTH];
-float waveformThat[WAVEFORM_LENGTH];
-// waveformThis @=> float waveformThat[];
-waveformThis @=> float writeWaveform[];
-waveformThat @=> float readWaveform[];
+dac => FFT fft => blackhole;
+WAVEFORM_LENGTH * 2 => fft.size;
+
+float waveform[WAVEFORM_LENGTH];
+complex spectrum[WAVEFORM_LENGTH];
 // waveform update
 fun void WaveformWriter() {
     0 => int i;
     while (true) {
-        dac.last() => writeWaveform[i++];
-        if (i >= writeWaveform.size()) {
-            0 => i;
-            if (writeWaveform == waveformThis) {
-                waveformThat @=> writeWaveform;
-                waveformThis @=> readWaveform;
-            } else {
-                waveformThis @=> writeWaveform;
-                waveformThat @=> readWaveform;
-            }
-        }
-        // if (i % 64 == 0)
-        //     <<< dac.last() >>>;
+        dac.last() => waveform[i++];
+        // g.last() => waveform[i++];
+        if (i >= waveform.size()) { 0 => i; }
         1::samp => now;
     }
 } 
 spork ~ WaveformWriter();
 
+fun void SpectrumWriter() {
+    while (WAVEFORM_LENGTH::samp => now) {
+        // take fft
+        fft.upchuck();
+        // get contents
+        fft.spectrum( spectrum );
+        // <<< spectrum[0]$polar, spectrum[50]$polar, spectrum[100]$polar, spectrum[150]$polar >>>;
+    }
+}
+spork ~ SpectrumWriter();
+
 // Scene Setup =============================================================
 CglUpdate UpdateEvent;
 CglFrame FrameEvent;
-CglCamera mainCamera; 
+CglCamera mainCamera; mainCamera.SetPosition(3 * BACK);
 CglScene scene;
 
 BoxGeo boxGeo;
+SphereGeo sphereGeo;
 NormMat normMat;  
 
-CglMesh boxMeshes[WAVEFORM_LENGTH];
+CglMesh waveformBoxMeshes[WAVEFORM_LENGTH];
+CglMesh spectrumBoxMeshes[WAVEFORM_LENGTH];
 50.0 / WAVEFORM_LENGTH => float boxScale;
 
 // initialize boxes for waveform
 for (0 => int i; i < WAVEFORM_LENGTH; i++) {
-    boxMeshes[i].set(boxGeo, normMat);
-    boxMeshes[i].SetScale(boxScale * UNIFORM);
-    boxMeshes[i].SetPosition(((-WAVEFORM_LENGTH/2) + i) * RIGHT * boxScale);
-    scene.AddChild(boxMeshes[i]);
+    waveformBoxMeshes[i].set(boxGeo, normMat);
+    waveformBoxMeshes[i].SetScale(boxScale * UNIFORM);
+    waveformBoxMeshes[i].SetPosition(((-WAVEFORM_LENGTH/2) + i) * RIGHT * boxScale);
+    scene.AddChild(waveformBoxMeshes[i]);
+
+    spectrumBoxMeshes[i].set(sphereGeo, normMat);  // TODO add different material for spectrum
+    spectrumBoxMeshes[i].SetScale(boxScale * UNIFORM);
+    spectrumBoxMeshes[i].SetPosition(((-WAVEFORM_LENGTH/2) + i) * RIGHT * boxScale + FORWARD);
+    scene.AddChild(spectrumBoxMeshes[i]);
 }
 
 fun void UpdateVisualizer() {
-    // <<< "===updating visualizer===" >>>;
     for (0 => int i; i < WAVEFORM_LENGTH; i++) {
-        // boxMeshes[i].SetScale(@(1, 10 * (waveform[i] + 1.001), 1));
-        // boxMeshes[i].SetPosition((boxMeshes[i].GetPosition() + (readWaveform[i] * UP)));
-        boxMeshes[i].PosY((5 * (readWaveform[i])));
+        waveformBoxMeshes[i].PosY((5 * (waveform[i]))); // waveform
+
+        // no interpolation
+        // spectrumBoxMeshes[i].PosY((5 * Math.pow((spectrum[i]$polar).mag, .1))); // spectrum
+
+        // add interpolation
+        spectrumBoxMeshes[i].GetPosition() => vec3 spectrumBoxPos;
+        5 * Math.pow((spectrum[i]$polar).mag, .1) => float spectrumBoxTargetY;
+        spectrumBoxPos.y => float spectrumBoxCurrentY;
+        0.14 => float interpSpeed;
+        spectrumBoxMeshes[i].PosY(spectrumBoxCurrentY + (spectrumBoxTargetY - spectrumBoxCurrentY) * interpSpeed); // spectrum
     }
 }
 
@@ -97,15 +116,6 @@ fun void UpdateVisualizer() {
 // flycamera controls
 fun void cameraUpdate(time t, dur dt)
 {
-
-	// set camera to always be above snake head
-	// TODO: needs to be relative to the snake direction
-	// OR just have wasd control camera pivot
-	// OR use orbit camera controls
-	// mainCamera.SetPosition(snake.head.GetPos() + @(0.0, 3.0, 3.0));
-	// OR make grid, snake, everything child of one group
-	// and use mouse/keys to ROTATE the group itself, like spinning the whole world around
-
 	// mouse lookaround
 	.001 => float mouseSpeed;
 	MM.GetDeltas() * mouseSpeed => vec3 mouseDeltas;

@@ -1,3 +1,9 @@
+/*
+Playground for testing chuck features and .help()
+
+Nothing to do with CGL
+*/
+
 @(1., 2., 3., 4.) => vec4 vec;
 @(1., 2., 3., 4.) => vec4 other_vec;
 
