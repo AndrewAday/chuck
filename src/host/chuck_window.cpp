@@ -194,15 +194,13 @@ void Window::DisplayLoop()
         you never know
         */
         /*
-        it is redundant to have two locks here:
+        two locks here:
         1 for writing/swapping the command queues
-        1 for the condition_var used to synchronize
-        technically if we use the condition var the command queue lock 
-        is unnecessary because the queue will only be swapped when chuck is blocked
-        on receiving an UpdateEvent from the renderer
-        but having the command queue lock protects against the case where 
-        people write CGL code outside of the sync context 
-        anyways the overhead is so low (~100ns) its not important
+            - this lock is grabbed by chuck every time we do a CGL call
+            - supports writing CGL commands whenever, even outside game loop
+        1 for the condition_var used to synchronize audio and graphics each frame
+            - combined with the chuck-side update_event, allows for writing frame-accurate cgl commands
+            - exposes a gameloop to chuck, gauranteed to be executed once per frame
 
         deadlock shouldn't happen because both locks are never held at the same time
         */
@@ -210,7 +208,7 @@ void Window::DisplayLoop()
             CGL::SwapCommandQueues();
         }
 
-        // done deepcopying, let chuck know it's good to continue pushing commands
+        // done swapping the double buffer, let chuck know it's good to continue pushing commands
         CglEvent::Broadcast(CglEventType::CGL_UPDATE);
 
         // now apply changes from the command queue chuck is NO Longer writing to 
@@ -221,9 +219,6 @@ void Window::DisplayLoop()
         // OpenGL Rendering Commands =========================
         // clear screen
         renderer.Clear();
-
-        // flush command queue!
-        // renderer.FlushCommandQueue(scene);
 
         // draw call
         renderer.RenderScene(&scene, &camera);

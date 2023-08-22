@@ -34,6 +34,7 @@ public:
 
 	// these two commands are for telling a material how to update itself
 	// via an update command
+	// TODO: is there a better way to do this in cpp that doesn't involve void * ?
 	virtual void * GenUpdate() = 0;
 	virtual void ApplyUpdate(void* data) = 0;
 

@@ -11,7 +11,7 @@
 // HnkyTonk.apropos();
 
 // PAUSE HONKEY
-while (1::second => now) {}
+// while (1::second => now) {}
 
 // ugens!
 HnkyTonk h[8];
